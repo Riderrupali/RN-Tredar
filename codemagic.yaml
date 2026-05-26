@@ -15,16 +15,18 @@ workflows:
             --org com.codemagic \
             --project-name code_magic_app \
             .
-      - name: Force Kotlin Version
+
+      - name: Fix Kotlin version for flutter_tts compatibility
         script: |
-          # इथे आपण नवीन तयार झालेल्या फोल्डरमध्ये ग्रॅडलला सांगतोय की कोणतं कोटलिन व्हर्जन वापरायचं
-          cat > android/gradle.properties << 'EOF'
-          org.gradle.jvmargs=-Xmx2048m -Dfile.encoding=UTF-8
-          android.useAndroidX=true
-          android.enableJetifier=true
-          ext.kotlin_version=1.9.0
-          EOF
+          # नवीन project structure साठी - settings.gradle
+          sed -i 's/id "org.jetbrains.kotlin.android" version "[^"]*"/id "org.jetbrains.kotlin.android" version "1.9.25"/' android/settings.gradle || true
           
+          # जुना project structure साठी - build.gradle
+          if grep -q "ext.kotlin_version" android/build.gradle 2>/dev/null; then
+            sed -i 's/ext.kotlin_version = .*/ext.kotlin_version = "1.9.25"/' android/build.gradle
+          fi
+          echo "✅ Kotlin version patched to 1.9.25"
+
       - name: Patch AndroidManifest
         script: |
           cat > android/app/src/main/AndroidManifest.xml << 'EOF'
@@ -51,6 +53,7 @@ workflows:
               </application>
           </manifest>
           EOF
+
       - name: Setup signing
         script: |
           mkdir -p android/app/
@@ -62,9 +65,14 @@ workflows:
           storeFile=code_magic.jks
           EOF
           cp android/key.properties android/app/key.properties
+
       - name: Flutter pub get
         script: flutter pub get
+
       - name: Build Release APK
         script: |
           flutter build apk --release --build-name=1.0.0 --build-number=1
-          
+
+    artifacts:
+      - build/app/outputs/flutter-apk/app-release.apk
+      

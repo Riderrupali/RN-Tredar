@@ -9,6 +9,7 @@ workflows:
     scripts:
       - name: Generate fresh Android project
         script: |
+          mv android android_old || true
           flutter create \
             --platforms android \
             --org com.codemagic \
@@ -16,7 +17,6 @@ workflows:
             .
       - name: Patch AndroidManifest permissions
         script: |
-          # (Keep your existing manifest script here)
           cat > android/app/src/main/AndroidManifest.xml << 'EOF'
           <?xml version="1.0" encoding="utf-8"?>
           <manifest xmlns:android="http://schemas.android.com/apk/res/android">
@@ -43,13 +43,15 @@ workflows:
           EOF
       - name: Setup signing
         script: |
+          # आता फाईल्स कुठे आहेत ते बघूया आणि मगच कॉपी करू
+          ls -R .
+          mkdir -p android/app/
           cp keystore/code_magic.jks android/app/code_magic.jks
           cp key.properties android/key.properties
       - name: Flutter pub get
         script: flutter pub get
       - name: Build Release APK
         script: |
-          # प्लगिन आणि व्हर्जन फिक्स करण्यासाठी थेट 'flutter build' वापरणे उत्तम
           flutter build apk --release \
             --build-name=1.0.0 \
             --build-number=1

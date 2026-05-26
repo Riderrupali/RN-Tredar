@@ -16,6 +16,7 @@ workflows:
             .
       - name: Patch AndroidManifest permissions
         script: |
+          # (Keep your existing manifest script here)
           cat > android/app/src/main/AndroidManifest.xml << 'EOF'
           <?xml version="1.0" encoding="utf-8"?>
           <manifest xmlns:android="http://schemas.android.com/apk/res/android">
@@ -44,52 +45,11 @@ workflows:
         script: |
           cp keystore/code_magic.jks android/app/code_magic.jks
           cp key.properties android/key.properties
-          
-          # Kotlin व्हर्जन फिक्स करण्यासाठी ही ओळ महत्त्वाची आहे
-          echo "ext.kotlin_version = '1.9.0'" > android/settings.gradle
-          echo "include ':app'" >> android/settings.gradle
-          
-          cat > android/app/build.gradle << 'EOF'
-          plugins {
-              id "com.android.application"
-              id "org.jetbrains.kotlin.android" version "1.9.0"
-              id "dev.flutter.flutter-gradle-plugin"
-          }
-          android {
-              namespace "com.codemagic.app"
-              compileSdk flutter.compileSdkVersion
-              ndkVersion flutter.ndkVersion
-              compileOptions { sourceCompatibility JavaVersion.VERSION_1_8; targetCompatibility JavaVersion.VERSION_1_8 }
-              kotlinOptions { jvmTarget = "1.8" }
-              defaultConfig {
-                  applicationId "com.codemagic.app"
-                  minSdk 21
-                  targetSdk flutter.targetSdkVersion
-                  versionCode 1
-                  versionName "1.0.0"
-              }
-              signingConfigs {
-                  release {
-                      keyAlias "code_magic_key"
-                      keyPassword "riderrupali@07"
-                      storeFile file("code_magic.jks")
-                      storePassword "riderrupali@07"
-                  }
-              }
-              buildTypes {
-                  release {
-                      signingConfig signingConfigs.release
-                      minifyEnabled false
-                      shrinkResources false
-                  }
-              }
-          }
-          flutter { source "../.." }
-          EOF
       - name: Flutter pub get
         script: flutter pub get
       - name: Build Release APK
         script: |
+          # प्लगिन आणि व्हर्जन फिक्स करण्यासाठी थेट 'flutter build' वापरणे उत्तम
           flutter build apk --release \
             --build-name=1.0.0 \
             --build-number=1

@@ -9,12 +9,12 @@ workflows:
     scripts:
       - name: Generate fresh Android project
         script: |
+          mv android android_old || true
           flutter create \
             --platforms android \
             --org com.codemagic \
             --project-name code_magic_app \
             .
-
       - name: Patch AndroidManifest permissions
         script: |
           cat > android/app/src/main/AndroidManifest.xml << 'EOF'
@@ -28,19 +28,44 @@ workflows:
               <uses-permission android:name="android.permission.READ_MEDIA_IMAGES"/>
               <uses-permission android:name="android.permission.SYSTEM_ALERT_WINDOW"/>
               <uses-permission android:name="android.permission.CAMERA"/>
-              <application
-                  android:label="Code Magic"
-                  android:name="${applicationName}"
-                  android:icon="@mipmap/ic_launcher"
-                  android:enableOnBackInvokedCallback="true">
-                  <activity
-                      android:name=".MainActivity"
-                      android:exported="true"
-                      android:launchMode="singleTop"
-                      android:taskAffinity=""
-                      android:theme="@style/LaunchTheme"
-                      android:configChanges="orientation|keyboardHidden|keyboard|screenSize|smallestScreenSize|locale|layoutDirection|fontScale|screenLayout|density|uiMode"
-                      android:hardwareAccelerated="true"
-                      android:windowSoftInputMode="adjustResize">
-                      <meta-data
-                          android:name="io.flutter.embedding.android.N
+              <application android:label="Code Magic" android:name="${applicationName}" android:icon="@mipmap/ic_launcher" android:enableOnBackInvokedCallback="true">
+                  <activity android:name=".MainActivity" android:exported="true" android:launchMode="singleTop" android:taskAffinity="" android:theme="@style/LaunchTheme" android:configChanges="orientation|keyboardHidden|keyboard|screenSize|smallestScreenSize|locale|layoutDirection|fontScale|screenLayout|density|uiMode" android:hardwareAccelerated="true" android:windowSoftInputMode="adjustResize">
+                      <meta-data android:name="io.flutter.embedding.android.NormalTheme" android:resource="@style/NormalTheme"/>
+                      <intent-filter>
+                          <action android:name="android.intent.action.MAIN"/>
+                          <category android:name="android.intent.category.LAUNCHER"/>
+                      </intent-filter>
+                  </activity>
+                  <service android:name="com.geekyants.flutter_overlay_window.OverlayService" android:exported="false" android:foregroundServiceType="microphone"/>
+                  <meta-data android:name="flutterEmbedding" android:value="2"/>
+              </application>
+          </manifest>
+          EOF
+      - name: Setup signing
+        script: |
+          mkdir -p android/app/
+          cp lib/keystore/code_magic.jks android/app/code_magic.jks
+          cat > android/key.properties << 'EOF'
+          storePassword=riderrupali@07
+          keyPassword=riderrupali@07
+          keyAlias=code_magic_key
+          storeFile=code_magic.jks
+          EOF
+          cp android/key.properties android/app/key.properties
+      - name: Flutter pub get
+        script: flutter pub get
+      - name: Build Release APK
+        script: |
+          flutter build apk --release \
+            --build-name=1.0.0 \
+            --build-number=1
+    artifacts:
+      - build/app/outputs/flutter-apk/app-release.apk
+    publishing:
+      email:
+        recipients:
+          - ridergeming170@gmail.com
+        notify:
+          success: true
+          failure: true
+          

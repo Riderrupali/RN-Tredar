@@ -5,6 +5,8 @@ workflows:
     environment:
       flutter: 3.24.0
       java: 17
+      android_sdk: 34
+
     scripts:
       - name: Generate fresh Android project
         script: |
@@ -49,6 +51,9 @@ workflows:
               id "kotlin-android"
               id "dev.flutter.flutter-gradle-plugin"
           }
+          
+          ext.kotlin_version = '1.9.0'
+          
           android {
               namespace "com.codemagic.app"
               compileSdk flutter.compileSdkVersion
@@ -96,3 +101,4 @@ workflows:
         notify:
           success: true
           failure: true
+          

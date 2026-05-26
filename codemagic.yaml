@@ -7,7 +7,7 @@ workflows:
       java: 17
 
     scripts:
-      - name: Generate fresh Android project
+      - name: Generate and Patch Android Project
         script: |
           rm -rf android
           flutter create \
@@ -15,24 +15,12 @@ workflows:
             --org com.codemagic \
             --project-name code_magic_app \
             .
-
-      - name: Fix Kotlin version for flutter_tts compatibility
-        script: |
-          # 1. settings.gradle मध्ये व्हर्जन अपडेट करा
+          
+          # 1. कोटलिन व्हर्जन फिक्स करा (हे सर्वात महत्त्वाचं आहे)
           sed -i 's/id "org.jetbrains.kotlin.android" version "[^"]*"/id "org.jetbrains.kotlin.android" version "1.9.25"/' android/settings.gradle || true
-          
-          # 2. build.gradle मध्ये व्हर्जन अपडेट करा (जर असेल तर)
-          if [ -f android/build.gradle ]; then
-            sed -i 's/ext.kotlin_version = .*/ext.kotlin_version = "1.9.25"/' android/build.gradle
-          fi
-          
-          # 3. gradle.properties मध्ये पण सेट करा
           echo "ext.kotlin_version=1.9.25" >> android/gradle.properties
           
-          echo "✅ Kotlin version forced to 1.9.25"
-
-      - name: Patch AndroidManifest
-        script: |
+          # 2. Manifest फिक्स करा (हे पण याच स्टेपमध्ये करत आहोत)
           cat > android/app/src/main/AndroidManifest.xml << 'EOF'
           <?xml version="1.0" encoding="utf-8"?>
           <manifest xmlns:android="http://schemas.android.com/apk/res/android">
@@ -57,6 +45,7 @@ workflows:
               </application>
           </manifest>
           EOF
+          echo "✅ Project generated, Kotlin patched, and Manifest updated."
 
       - name: Setup signing
         script: |

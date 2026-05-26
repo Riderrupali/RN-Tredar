@@ -1,1 +1,156 @@
+Workflows:
+  android-release:
+    name: Code Magic — Trading App Release
+    max_build_duration: 60
+    environment:
+      flutter: 3.24.0
+      java: 17
 
+    scripts:
+      # ── Step 1: Fresh android folder ──
+      - name: Generate fresh Android project
+        script: |
+          flutter create \
+            --platforms android \
+            --org com.codemagic \
+            --project-name code_magic_app \
+            .
+
+      # ── Step 2: Patch AndroidManifest ──
+      - name: Patch AndroidManifest permissions
+        script: |
+          cat > android/app/src/main/AndroidManifest.xml << 'EOF'
+          <?xml version="1.0" encoding="utf-8"?>
+          <manifest xmlns:android="http://schemas.android.com/apk/res/android">
+
+              <uses-permission android:name="android.permission.INTERNET"/>
+              <uses-permission android:name="android.permission.RECORD_AUDIO"/>
+              <uses-permission android:name="android.permission.FOREGROUND_SERVICE"/>
+              <uses-permission android:name="android.permission.FOREGROUND_SERVICE_MICROPHONE"/>
+              <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE"
+                  android:maxSdkVersion="32"/>
+              <uses-permission android:name="android.permission.READ_MEDIA_IMAGES"/>
+              <uses-permission android:name="android.permission.SYSTEM_ALERT_WINDOW"/>
+              <uses-permission android:name="android.permission.CAMERA"/>
+
+              <application
+                  android:label="Code Magic"
+                  android:name="${applicationName}"
+                  android:icon="@mipmap/ic_launcher"
+                  android:enableOnBackInvokedCallback="true">
+
+                  <activity
+                      android:name=".MainActivity"
+                      android:exported="true"
+                      android:launchMode="singleTop"
+                      android:taskAffinity=""
+                      android:theme="@style/LaunchTheme"
+                      android:configChanges="orientation|keyboardHidden|keyboard|screenSize|smallestScreenSize|locale|layoutDirection|fontScale|screenLayout|density|uiMode"
+                      android:hardwareAccelerated="true"
+                      android:windowSoftInputMode="adjustResize">
+
+                      <meta-data
+                          android:name="io.flutter.embedding.android.NormalTheme"
+                          android:resource="@style/NormalTheme"/>
+
+                      <intent-filter>
+                          <action android:name="android.intent.action.MAIN"/>
+                          <category android:name="android.intent.category.LAUNCHER"/>
+                      </intent-filter>
+                  </activity>
+
+                  <service
+                      android:name="com.geekyants.flutter_overlay_window.OverlayService"
+                      android:exported="false"
+                      android:foregroundServiceType="microphone"/>
+
+                  <meta-data
+                      android:name="flutterEmbedding"
+                      android:value="2"/>
+              </application>
+          </manifest>
+          EOF
+
+      # ── Step 3: Setup Release Signing & Version Code FIX ──
+      - name: Setup signing
+        script: |
+          cp keystore/code_magic.jks android/app/code_magic.jks
+          cp key.properties android/key.properties
+          
+          # Fix for "Could not get unknown property 'flutterVersionCode'"
+          echo "flutterVersionCode=1" >> android/local.properties
+
+          cat > android/app/build.gradle << 'EOF'
+          plugins {
+              id "com.android.application"
+              id "kotlin-android"
+              id "dev.flutter.flutter-gradle-plugin"
+          }
+
+          android {
+              namespace "com.codemagic.app"
+              compileSdk flutter.compileSdkVersion
+              ndkVersion flutter.ndkVersion
+
+              compileOptions {
+                  sourceCompatibility JavaVersion.VERSION_1_8
+                  targetCompatibility JavaVersion.VERSION_1_8
+              }
+
+              kotlinOptions {
+                  jvmTarget = "1.8"
+              }
+
+              defaultConfig {
+                  applicationId "com.codemagic.app"
+                  minSdk 21
+                  targetSdk flutter.targetSdkVersion
+                  versionCode flutterVersionCode.toInteger()
+                  versionName flutterVersionName
+              }
+
+              signingConfigs {
+                  release {
+                      keyAlias "code_magic_key"
+                      keyPassword "riderrupali@07"
+                      storeFile file("code_magic.jks")
+                      storePassword "riderrupali@07"
+                  }
+              }
+
+              buildTypes {
+                  release {
+                      signingConfig signingConfigs.release
+                      minifyEnabled false
+                      shrinkResources false
+                  }
+              }
+          }
+
+          flutter {
+              source "../.."
+          }
+          EOF
+
+      # ── Step 4: Get packages ──
+      - name: Flutter pub get
+        script: flutter pub get
+
+      # ── Step 5: Build signed APK ──
+      - name: Build Release APK
+        script: |
+          flutter build apk --release \
+            --build-name=1.0.0 \
+            --build-number=1
+
+    artifacts:
+      - build/app/outputs/flutter-apk/app-release.apk
+
+    publishing:
+      email:
+        recipients:
+          - ridergeming170@gmail.com
+        notify:
+          success: true
+          failure: true
+          

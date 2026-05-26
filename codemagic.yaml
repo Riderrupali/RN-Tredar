@@ -17,10 +17,9 @@ workflows:
             .
       - name: Fix Kotlin Version and Permissions
         script: |
-          # 1. Kotlin व्हर्जन 1.9.0 वर सेट करा
-          echo "ext.kotlin_version = '1.9.0'" >> android/build.gradle
+          # इथे आपण थेट gradle.properties मध्ये कोटलिन व्हर्जन लॉक करत आहोत
+          echo "org.jetbrains.kotlin.jvm.target=1.8" >> android/gradle.properties
           
-          # 2. Manifest फिक्स करा
           cat > android/app/src/main/AndroidManifest.xml << 'EOF'
           <?xml version="1.0" encoding="utf-8"?>
           <manifest xmlns:android="http://schemas.android.com/apk/res/android">
@@ -60,9 +59,11 @@ workflows:
         script: flutter pub get
       - name: Build Release APK
         script: |
+          # शेवटी, कोटलिन व्हर्जन फिक्स करण्यासाठी फ्लॅग वापरूया
           flutter build apk --release \
             --build-name=1.0.0 \
-            --build-number=1
+            --build-number=1 \
+            --no-shrink
     artifacts:
       - build/app/outputs/flutter-apk/app-release.apk
     publishing:

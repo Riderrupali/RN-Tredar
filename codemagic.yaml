@@ -15,8 +15,12 @@ workflows:
             --org com.codemagic \
             --project-name code_magic_app \
             .
-      - name: Patch AndroidManifest permissions
+      - name: Fix Kotlin Version and Permissions
         script: |
+          # 1. Kotlin व्हर्जन 1.9.0 वर सेट करा
+          echo "ext.kotlin_version = '1.9.0'" >> android/build.gradle
+          
+          # 2. Manifest फिक्स करा
           cat > android/app/src/main/AndroidManifest.xml << 'EOF'
           <?xml version="1.0" encoding="utf-8"?>
           <manifest xmlns:android="http://schemas.android.com/apk/res/android">
@@ -43,19 +47,14 @@ workflows:
           EOF
       - name: Setup signing
         script: |
-          # केस्टोर कॉपी करा
           mkdir -p android/app/
           cp lib/keystore/code_magic.jks android/app/code_magic.jks
-          
-          # key.properties फाईल इथेच तयार करा, म्हणजे ती शोधायला लागणार नाही
           cat > android/key.properties << 'EOF'
           storePassword=riderrupali@07
           keyPassword=riderrupali@07
           keyAlias=code_magic_key
           storeFile=code_magic.jks
           EOF
-          
-          # फाईलची कॉपी android/app/ फोल्डरमध्ये ठेवा
           cp android/key.properties android/app/key.properties
       - name: Flutter pub get
         script: flutter pub get

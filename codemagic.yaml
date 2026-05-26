@@ -1,4 +1,4 @@
-workflows:
+Workflows:
   android-release:
     name: Code Magic — Trading App Release
     max_build_duration: 60
@@ -7,7 +7,7 @@ workflows:
       java: 17
 
     scripts:
-      # ── Step 1: Fresh android folder — FIXES "unsupported Gradle" error ──
+      # ── Step 1: Fresh android folder ──
       - name: Generate fresh Android project
         script: |
           flutter create \
@@ -16,7 +16,7 @@ workflows:
             --project-name code_magic_app \
             .
 
-      # ── Step 2: Patch AndroidManifest with required permissions ──
+      # ── Step 2: Patch AndroidManifest ──
       - name: Patch AndroidManifest permissions
         script: |
           cat > android/app/src/main/AndroidManifest.xml << 'EOF'
@@ -75,27 +75,13 @@ workflows:
       - name: Setup signing
         script: |
           cp keystore/code_magic.jks android/app/code_magic.jks
-
-          cat > android/key.properties << 'EOF'
-          storePassword=riderrupali@07
-          keyPassword=riderrupali@07
-          keyAlias=code_magic_key
-          storeFile=code_magic.jks
-          EOF
+          cp key.properties android/key.properties
 
           cat > android/app/build.gradle << 'EOF'
           plugins {
               id "com.android.application"
               id "kotlin-android"
               id "dev.flutter.flutter-gradle-plugin"
-          }
-
-          def keystoreProperties = new Properties()
-          def keystorePropertiesFile = rootProject.file('key.properties')
-          if (keystorePropertiesFile.exists()) {
-              keystorePropertiesFile.withReader('UTF-8') { reader ->
-                  keystoreProperties.load(reader)
-              }
           }
 
           android {
@@ -116,8 +102,8 @@ workflows:
                   applicationId "com.codemagic.app"
                   minSdk 21
                   targetSdk flutter.targetSdkVersion
-                  versionCode flutterVersionCode.toInteger()
-                  versionName flutterVersionName
+                  versionCode 1
+                  versionName "1.0.0"
               }
 
               signingConfigs {
@@ -164,3 +150,4 @@ workflows:
         notify:
           success: true
           failure: true
+          

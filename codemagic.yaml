@@ -44,10 +44,15 @@ workflows:
         script: |
           cp keystore/code_magic.jks android/app/code_magic.jks
           cp key.properties android/key.properties
+          
+          # Kotlin व्हर्जन फिक्स करण्यासाठी ही ओळ महत्त्वाची आहे
+          echo "ext.kotlin_version = '1.9.0'" > android/settings.gradle
+          echo "include ':app'" >> android/settings.gradle
+          
           cat > android/app/build.gradle << 'EOF'
           plugins {
               id "com.android.application"
-              id "kotlin-android"
+              id "org.jetbrains.kotlin.android" version "1.9.0"
               id "dev.flutter.flutter-gradle-plugin"
           }
           android {

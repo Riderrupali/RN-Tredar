@@ -15,11 +15,15 @@ workflows:
             --org com.codemagic \
             --project-name code_magic_app \
             .
-      - name: Fix Kotlin and Dependencies
+      - name: Force Kotlin Version
         script: |
-          # कोटलिन व्हर्जन 1.9.0 वर लॉक करा
-          echo "ext.kotlin_version = '1.9.0'" >> android/build.gradle
-          echo "org.jetbrains.kotlin.jvm.target=1.8" >> android/gradle.properties
+          # इथे आपण नवीन तयार झालेल्या फोल्डरमध्ये ग्रॅडलला सांगतोय की कोणतं कोटलिन व्हर्जन वापरायचं
+          cat > android/gradle.properties << 'EOF'
+          org.gradle.jvmargs=-Xmx2048m -Dfile.encoding=UTF-8
+          android.useAndroidX=true
+          android.enableJetifier=true
+          ext.kotlin_version=1.9.0
+          EOF
           
       - name: Patch AndroidManifest
         script: |

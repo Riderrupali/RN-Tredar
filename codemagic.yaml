@@ -43,10 +43,20 @@ workflows:
           EOF
       - name: Setup signing
         script: |
-          # आता फाईल 'lib/keystore/' च्या आतून कॉपी होईल
+          # केस्टोर कॉपी करा
           mkdir -p android/app/
           cp lib/keystore/code_magic.jks android/app/code_magic.jks
-          cp key.properties android/key.properties
+          
+          # key.properties फाईल इथेच तयार करा, म्हणजे ती शोधायला लागणार नाही
+          cat > android/key.properties << 'EOF'
+          storePassword=riderrupali@07
+          keyPassword=riderrupali@07
+          keyAlias=code_magic_key
+          storeFile=code_magic.jks
+          EOF
+          
+          # फाईलची कॉपी android/app/ फोल्डरमध्ये ठेवा
+          cp android/key.properties android/app/key.properties
       - name: Flutter pub get
         script: flutter pub get
       - name: Build Release APK

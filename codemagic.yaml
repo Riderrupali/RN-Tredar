@@ -18,14 +18,18 @@ workflows:
 
       - name: Fix Kotlin version for flutter_tts compatibility
         script: |
-          # नवीन project structure साठी - settings.gradle
+          # 1. settings.gradle मध्ये व्हर्जन अपडेट करा
           sed -i 's/id "org.jetbrains.kotlin.android" version "[^"]*"/id "org.jetbrains.kotlin.android" version "1.9.25"/' android/settings.gradle || true
           
-          # जुना project structure साठी - build.gradle
-          if grep -q "ext.kotlin_version" android/build.gradle 2>/dev/null; then
+          # 2. build.gradle मध्ये व्हर्जन अपडेट करा (जर असेल तर)
+          if [ -f android/build.gradle ]; then
             sed -i 's/ext.kotlin_version = .*/ext.kotlin_version = "1.9.25"/' android/build.gradle
           fi
-          echo "✅ Kotlin version patched to 1.9.25"
+          
+          # 3. gradle.properties मध्ये पण सेट करा
+          echo "ext.kotlin_version=1.9.25" >> android/gradle.properties
+          
+          echo "✅ Kotlin version forced to 1.9.25"
 
       - name: Patch AndroidManifest
         script: |
@@ -72,7 +76,4 @@ workflows:
       - name: Build Release APK
         script: |
           flutter build apk --release --build-name=1.0.0 --build-number=1
-
-    artifacts:
-      - build/app/outputs/flutter-apk/app-release.apk
-      
+          

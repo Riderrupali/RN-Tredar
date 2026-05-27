@@ -1,4 +1,0 @@
-storePassword=riderrupali@07
-  keyPassword=riderrupali@07
-  keyAlias=code_magic_key
-  storeFile=code_magic.jks

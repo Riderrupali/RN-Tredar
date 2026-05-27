@@ -35,34 +35,33 @@ jobs:
 
       - name: Generate Android project
         run: |
-          # जर android फोल्डर नसेल, तरच क्रिएट कर
           if [ ! -d "android" ]; then
             flutter create --platforms android .
           else
             echo "Android folder already exists."
           fi
-          ls -R android/ # डिबग करण्यासाठी फोल्डर स्ट्रक्चर प्रिंट कर
+          ls -R android/
 
       - name: Fix Kotlin + AGP + jcenter (auto patch)
         run: |
           python3 - << 'EOF'
-          import os
+          import os, re
           
-          # खात्री करा की settings.gradle अस्तित्वात आहे
           target = "android/settings.gradle"
           if not os.path.exists(target):
               print(f"CRITICAL ERROR: {target} सापडले नाही!")
               exit(1)
           
-          # आता पॅचिंग कोड...
-          import re, subprocess
           KOTLIN, AGP = "1.9.25", "8.3.2"
           
           def patch(path):
               if not os.path.exists(path): return
               txt = open(path).read()
+              # Kotlin version
               txt = re.sub(r'''(id\s*[\(]?\s*['"]org\.jetbrains\.kotlin\.android['"]\s*[\)]?\s+version\s+)['"][^'"]*['"]''', lambda m: m.group(1) + f'"{KOTLIN}"', txt)
+              # AGP version
               txt = re.sub(r'''(id\s*[\(]?\s*['"]com\.android\.application['"]\s*[\)]?\s+version\s+)['"][^'"]*['"]''', lambda m: m.group(1) + f'"{AGP}"', txt)
+              # Remove jcenter
               txt = txt.replace("jcenter()", "// jcenter() removed")
               open(path, 'w').write(txt)
 
@@ -79,3 +78,4 @@ jobs:
           name: release-apk
           path: build/app/outputs/flutter-apk/app-release.apk
           retention-days: 7
+          

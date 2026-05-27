@@ -111,6 +111,8 @@ workflows:
       - name: Flutter pub get
         script: |
           flutter clean
+          rm -rf pubspec.lock
+          flutter pub cache clean --force
           flutter pub get
 
       # ── Step 7: Build APK ──

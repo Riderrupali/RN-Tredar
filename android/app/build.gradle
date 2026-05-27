@@ -7,7 +7,6 @@ plugins {
 android {
     namespace = "com.codemagic.app"
     compileSdk = 36
-    ndkVersion = flutter.ndkVersion
 
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_17
@@ -29,8 +28,6 @@ android {
     buildTypes {
         release {
             signingConfig = signingConfigs.debug
-            minifyEnabled false
-            shrinkResources false
         }
     }
 }

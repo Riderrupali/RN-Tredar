@@ -55,7 +55,9 @@ workflows:
 
       - name: Build Release APK
         script: |
-          flutter build apk --release
+          # इथे --no-shrink फ्लॅग ॲड केला आहे
+          flutter build apk --release --no-shrink
     artifacts:
       - build/**/outputs/**/*.apk
       - build/**/outputs/**/mapping.txt
+      

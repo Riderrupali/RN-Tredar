@@ -17,13 +17,23 @@ workflows:
             --project-name code_magic_app \
             .
 
-      # ── Step 2: Update Kotlin properly ──
-- name: Update Kotlin Version
-  script: |
-    sed -i.bak 's/version "1.7.10"/version "2.1.0"/g' android/settings.gradle || true
-    sed -i.bak 's/ext.kotlin_version = .*/ext.kotlin_version = '\''2.1.0'\''/g' android/build.gradle || true
+      scripts:
+      # ── Step 1: Fresh Android project ──
+      - name: Generate fresh Android project
+        script: |
+          flutter create \
+            --platforms android \
+            --org com.codemagic \
+            --project-name code_magic_app \
+            .
 
-    cat android/settings.gradle
+      # ── Step 2: Update Kotlin properly ──
+      - name: Update Kotlin Version
+        script: |
+          sed -i.bak 's/version "1.7.10"/version "2.1.0"/g' android/settings.gradle || true
+          sed -i.bak "s/ext.kotlin_version = .*/ext.kotlin_version = '2.1.0'/g" android/build.gradle || true
+
+          cat android/settings.gradle
           
       # ── Step 3: Create pubspec ──
       - name: Create pubspec

@@ -1,6 +1,6 @@
 workflows:
   android-release:
-    name: Code Magic — Trading App Release
+    name: Code Magic Trading App Release
     max_build_duration: 60
 
     environment:
@@ -8,117 +8,22 @@ workflows:
       java: 17
 
     scripts:
-      # ── Step 1: Fresh Android project ──
-  - name: Generate fresh Android project
-    script: |
-      flutter create \
-        --platforms android \
-        --org com.codemagic \
-        --project-name code_magic_app \
-        .
+      # Step 1
+      - name: Generate fresh Android project
+        script: |
+          flutter create \
+            --platforms android \
+            --org com.codemagic \
+            --project-name code_magic_app \
+            .
 
-  # ── Step 2: Update Kotlin properly ──
-  - name: Update Kotlin Version
-    script: |
-      sed -i.bak 's/version "1.7.10"/version "2.1.0"/g' android/settings.gradle || true
-      sed -i.bak "s/ext.kotlin_version = .*/ext.kotlin_version = '2.1.0'/g" android/build.gradle || true
-
-      cat android/settings.gradle
-
-      # ── Step 2: Update Kotlin properly ──
+      # Step 2
       - name: Update Kotlin Version
         script: |
           sed -i.bak 's/version "1.7.10"/version "2.1.0"/g' android/settings.gradle || true
           sed -i.bak "s/ext.kotlin_version = .*/ext.kotlin_version = '2.1.0'/g" android/build.gradle || true
 
-          cat android/settings.gradle
-          
-      # ── Step 3: Create pubspec ──
-      - name: Create pubspec
-        script: |
-          cat > pubspec.yaml << 'EOF'
-          name: code_magic_app
-
-          description: Trading App
-
-          publish_to: 'none'
-
-          version: 1.0.0+1
-
-          environment:
-            sdk: ">=3.0.0 <4.0.0"
-
-          dependencies:
-            flutter:
-              sdk: flutter
-
-            cupertino_icons: ^1.0.6
-            google_mlkit_text_recognition: ^0.13.0
-            image_picker: ^1.1.2
-            flutter_animate: ^4.5.0
-            permission_handler: ^11.3.1
-            file_picker: ^8.0.0+1
-            sqflite: ^2.3.3
-            flutter_tts: ^4.0.2
-
-          flutter:
-            uses-material-design: true
-          EOF
-
-      # ── Step 4: Android permissions ──
-      - name: Patch AndroidManifest
-        script: |
-          cat > android/app/src/main/AndroidManifest.xml << 'EOF'
-          <?xml version="1.0" encoding="utf-8"?>
-          <manifest xmlns:android="http://schemas.android.com/apk/res/android">
-
-              <uses-permission android:name="android.permission.INTERNET"/>
-              <uses-permission android:name="android.permission.RECORD_AUDIO"/>
-              <uses-permission android:name="android.permission.CAMERA"/>
-              <uses-permission android:name="android.permission.READ_MEDIA_IMAGES"/>
-              <uses-permission android:name="android.permission.SYSTEM_ALERT_WINDOW"/>
-
-              <application
-                  android:label="Code Magic"
-                  android:name="${applicationName}"
-                  android:icon="@mipmap/ic_launcher">
-
-                  <activity
-                      android:name=".MainActivity"
-                      android:exported="true"
-                      android:launchMode="singleTop"
-                      android:theme="@style/LaunchTheme"
-                      android:configChanges="orientation|keyboardHidden|keyboard|screenSize|smallestScreenSize|layoutDirection|fontScale|screenLayout|density|uiMode"
-                      android:hardwareAccelerated="true"
-                      android:windowSoftInputMode="adjustResize">
-
-                      <intent-filter>
-                          <action android:name="android.intent.action.MAIN"/>
-                          <category android:name="android.intent.category.LAUNCHER"/>
-                      </intent-filter>
-
-                  </activity>
-
-                  <meta-data
-                      android:name="flutterEmbedding"
-                      android:value="2"/>
-              </application>
-          </manifest>
-          EOF
-
-      # ── Step 5: Setup signing ──
-      - name: Setup signing
-        script: |
-          cp keystore/code_magic.jks android/app/code_magic.jks
-
-          cat > android/key.properties << 'EOF'
-          storePassword=riderrupali@07
-          keyPassword=riderrupali@07
-          keyAlias=code_magic_key
-          storeFile=code_magic.jks
-          EOF
-
-      # ── Step 6: Flutter pub get ──
+      # Step 3
       - name: Flutter pub get
         script: |
           flutter clean
@@ -126,7 +31,7 @@ workflows:
           flutter pub cache clean --force
           flutter pub get
 
-      # ── Step 7: Build APK ──
+      # Step 4
       - name: Build Release APK
         script: |
           flutter build apk --release

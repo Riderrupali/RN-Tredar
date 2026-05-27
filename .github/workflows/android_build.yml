@@ -35,20 +35,16 @@ jobs:
 
       - name: Generate Android project
         run: |
-          # जुनं फोल्डर काढून फ्रेश प्रोजेक्ट बनवणे
           rm -rf android/
           flutter create --platforms android .
-          # फाईल बनली का ते चेक करणे
-          if [ ! -f "android/settings.gradle" ]; then
-            echo "Error: android/settings.gradle तयार झाले नाही!"
-            exit 1
-          fi
 
       - name: Fix Kotlin + AGP + jcenter (auto patch)
         run: |
           python3 - << 'EOF'
-          import os, re
+          import os, re, glob
           
+          # settings.gradle किंवा .kts दोन्ही शोधणे
+          targets = glob.glob("android/settings.gradle*")
           KOTLIN, AGP = "1.9.25", "8.3.2"
           
           def patch(path):
@@ -63,7 +59,8 @@ jobs:
               open(path, 'w').write(txt)
               print(f"PATCHED: {path}")
 
-          for f in ["android/settings.gradle", "android/build.gradle", "android/app/build.gradle"]:
+          # सर्व फाईल्सना पॅच करा
+          for f in targets + glob.glob("android/build.gradle*") + glob.glob("android/app/build.gradle*"):
               patch(f)
           EOF
 

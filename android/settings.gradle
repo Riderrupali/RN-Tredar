@@ -18,10 +18,12 @@ pluginManagement {
         gradlePluginPortal()
     }
 }
+
 plugins {
     id "dev.flutter.flutter-plugin-loader" version "1.0.0"
-    // इथे 8.7.0 ऐवजी 8.9.1 करा
     id "com.android.application" version "8.9.1" apply false
-    id "org.jetbrains.kotlin.android" version "1.9.25" apply false
+    // इथे आपण 1.9.25 वरून 2.2.0 केले आहे
+    id "org.jetbrains.kotlin.android" version "2.2.0" apply false
 }
+
 include ":app"

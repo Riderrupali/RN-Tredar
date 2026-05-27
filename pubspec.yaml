@@ -20,7 +20,7 @@ dependencies:
   permission_handler: ^11.3.1
   file_picker: ^8.0.0+1
   sqflite: ^2.3.3
-  flutter_tts: ^4.0.2
+  flutter_tts: 3.8.5
 
 flutter:
   uses-material-design: true

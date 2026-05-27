@@ -35,22 +35,19 @@ jobs:
 
       - name: Generate Android project
         run: |
-          if [ ! -d "android" ]; then
-            flutter create --platforms android .
-          else
-            echo "Android folder already exists."
+          # जुनं फोल्डर काढून फ्रेश प्रोजेक्ट बनवणे
+          rm -rf android/
+          flutter create --platforms android .
+          # फाईल बनली का ते चेक करणे
+          if [ ! -f "android/settings.gradle" ]; then
+            echo "Error: android/settings.gradle तयार झाले नाही!"
+            exit 1
           fi
-          ls -R android/
 
       - name: Fix Kotlin + AGP + jcenter (auto patch)
         run: |
           python3 - << 'EOF'
           import os, re
-          
-          target = "android/settings.gradle"
-          if not os.path.exists(target):
-              print(f"CRITICAL ERROR: {target} सापडले नाही!")
-              exit(1)
           
           KOTLIN, AGP = "1.9.25", "8.3.2"
           
@@ -64,6 +61,7 @@ jobs:
               # Remove jcenter
               txt = txt.replace("jcenter()", "// jcenter() removed")
               open(path, 'w').write(txt)
+              print(f"PATCHED: {path}")
 
           for f in ["android/settings.gradle", "android/build.gradle", "android/app/build.gradle"]:
               patch(f)

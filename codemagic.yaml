@@ -2,12 +2,13 @@ workflows:
   android-release:
     name: Code Magic — Trading App Release
     max_build_duration: 60
+
     environment:
       flutter: 3.24.0
       java: 17
 
     scripts:
-      # ── Step 1: Fresh android folder — FIXES "unsupported Gradle" error ──
+      # ── Step 1: Fresh Android project ──
       - name: Generate fresh Android project
         script: |
           flutter create \
@@ -16,8 +17,39 @@ workflows:
             --project-name code_magic_app \
             .
 
-      # ── Step 2: Patch AndroidManifest with required permissions ──
-      - name: Patch AndroidManifest permissions
+      # ── Step 2: Create pubspec.yaml ──
+      - name: Create pubspec
+        script: |
+          cat > pubspec.yaml << 'EOF'
+          name: code_magic_app
+
+          description: Trading App
+
+          publish_to: 'none'
+
+          version: 1.0.0+1
+
+          environment:
+            sdk: ">=3.0.0 <4.0.0"
+
+          dependencies:
+            flutter:
+              sdk: flutter
+
+            cupertino_icons: ^1.0.6
+            google_mlkit_text_recognition: ^0.13.0
+            image_picker: ^1.1.2
+            flutter_animate: ^4.5.0
+            permission_handler: ^11.3.1
+            file_picker: ^8.0.0+1
+            sqflite: ^2.3.3
+
+          flutter:
+            uses-material-design: true
+          EOF
+
+      # ── Step 3: Android permissions ──
+      - name: Patch AndroidManifest
         script: |
           cat > android/app/src/main/AndroidManifest.xml << 'EOF'
           <?xml version="1.0" encoding="utf-8"?>
@@ -25,44 +57,30 @@ workflows:
 
               <uses-permission android:name="android.permission.INTERNET"/>
               <uses-permission android:name="android.permission.RECORD_AUDIO"/>
-              <uses-permission android:name="android.permission.FOREGROUND_SERVICE"/>
-              <uses-permission android:name="android.permission.FOREGROUND_SERVICE_MICROPHONE"/>
-              <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE"
-                  android:maxSdkVersion="32"/>
+              <uses-permission android:name="android.permission.CAMERA"/>
               <uses-permission android:name="android.permission.READ_MEDIA_IMAGES"/>
               <uses-permission android:name="android.permission.SYSTEM_ALERT_WINDOW"/>
-              <uses-permission android:name="android.permission.CAMERA"/>
 
               <application
                   android:label="Code Magic"
                   android:name="${applicationName}"
-                  android:icon="@mipmap/ic_launcher"
-                  android:enableOnBackInvokedCallback="true">
+                  android:icon="@mipmap/ic_launcher">
 
                   <activity
                       android:name=".MainActivity"
                       android:exported="true"
                       android:launchMode="singleTop"
-                      android:taskAffinity=""
                       android:theme="@style/LaunchTheme"
-                      android:configChanges="orientation|keyboardHidden|keyboard|screenSize|smallestScreenSize|locale|layoutDirection|fontScale|screenLayout|density|uiMode"
+                      android:configChanges="orientation|keyboardHidden|keyboard|screenSize|smallestScreenSize|layoutDirection|fontScale|screenLayout|density|uiMode"
                       android:hardwareAccelerated="true"
                       android:windowSoftInputMode="adjustResize">
-
-                      <meta-data
-                          android:name="io.flutter.embedding.android.NormalTheme"
-                          android:resource="@style/NormalTheme"/>
 
                       <intent-filter>
                           <action android:name="android.intent.action.MAIN"/>
                           <category android:name="android.intent.category.LAUNCHER"/>
                       </intent-filter>
-                  </activity>
 
-                  <service
-                      android:name="com.geekyants.flutter_overlay_window.OverlayService"
-                      android:exported="false"
-                      android:foregroundServiceType="microphone"/>
+                  </activity>
 
                   <meta-data
                       android:name="flutterEmbedding"
@@ -71,7 +89,7 @@ workflows:
           </manifest>
           EOF
 
-      # ── Step 3: Setup Release Signing ──
+      # ── Step 4: Setup signing ──
       - name: Setup signing
         script: |
           cp keystore/code_magic.jks android/app/code_magic.jks
@@ -83,84 +101,16 @@ workflows:
           storeFile=code_magic.jks
           EOF
 
-          cat > android/app/build.gradle << 'EOF'
-          plugins {
-              id "com.android.application"
-              id "kotlin-android"
-              id "dev.flutter.flutter-gradle-plugin"
-          }
-
-          def keystoreProperties = new Properties()
-          def keystorePropertiesFile = rootProject.file('key.properties')
-          if (keystorePropertiesFile.exists()) {
-              keystorePropertiesFile.withReader('UTF-8') { reader ->
-                  keystoreProperties.load(reader)
-              }
-          }
-
-          android {
-              namespace "com.codemagic.app"
-              compileSdk flutter.compileSdkVersion
-              ndkVersion flutter.ndkVersion
-
-              compileOptions {
-                  sourceCompatibility JavaVersion.VERSION_1_8
-                  targetCompatibility JavaVersion.VERSION_1_8
-              }
-
-              kotlinOptions {
-                  jvmTarget = "1.8"
-              }
-
-              defaultConfig {
-                  applicationId "com.codemagic.app"
-                  minSdk 21
-                  targetSdk 34
-                  versionCode 1
-                  versionName "1.0.0"
-              }
-
-              signingConfigs {
-                  release {
-                      keyAlias "code_magic_key"
-                      keyPassword "riderrupali@07"
-                      storeFile file("code_magic.jks")
-                      storePassword "riderrupali@07"
-                  }
-              }
-
-              buildTypes {
-                  release {
-                      signingConfig signingConfigs.release
-                      minifyEnabled false
-                      shrinkResources false
-                  }
-              }
-          }
-
-          flutter {
-              source "../.."
-          }
-          EOF
-
-      # ── Step 4: Get packages ──
+      # ── Step 5: Flutter pub get ──
       - name: Flutter pub get
-        script: flutter pub get
+        script: |
+          flutter clean
+          flutter pub get
 
-      # ── Step 5: Build signed APK ──
+      # ── Step 6: Build APK ──
       - name: Build Release APK
         script: |
-          flutter build apk --release \
-            --build-name=1.0.0 \
-            --build-number=1
+          flutter build apk --release
 
     artifacts:
       - build/app/outputs/flutter-apk/app-release.apk
-
-    publishing:
-      email:
-        recipients:
-          - ridergeming170@gmail.com
-        notify:
-          success: true
-          failure: true

@@ -11,10 +11,7 @@ workflows:
 
       - name: Get Flutter packages
         script: flutter pub get
-
-      - name: Generate fresh Android project
-        script: flutter create --platforms android .
-
+        
       - name: Update Kotlin Version to 2.2.0
         script: |
           python3 - <<'EOF'

@@ -15,36 +15,20 @@ workflows:
       - name: Generate fresh Android project
         script: flutter create --platforms android .
 
-      - name: Patch Kotlin and Gradle Config
+      - name: Update Kotlin Version to 2.2.0
         script: |
-          # 1. Force Kotlin Version in settings.gradle (फक्त प्लगइन व्हर्जन अपडेट करण्यासाठी)
           python3 - <<'EOF'
           import re, os
           sg_path = "android/settings.gradle"
           if os.path.exists(sg_path):
               with open(sg_path, "r") as f: content = f.read()
-              # इथे आपण बरोबर प्लगइन व्हर्जन बदलत आहोत
-              patched = re.sub(r'(id\s+["\']org\.jetbrains\.kotlin\.android["\']\s+version\s+)["\'][^"\']*["\']', r'\g<1>"1.9.25"', content)
+              # कोटलिन व्हर्जन 2.2.0 वर सेट करत आहोत
+              patched = re.sub(r'(id\s+["\']org\.jetbrains\.kotlin\.android["\']\s+version\s+)["\'][^"\']*["\']', r'\g<1>"2.2.0"', content)
               with open(sg_path, "w") as f: f.write(patched)
-          EOF
-
-          # 2. Force Resolution Strategy (ही ओळ आता android/app/build.gradle च्या शेवटी जाईल)
-          cat >> android/app/build.gradle << 'EOF'
-          
-          configurations.all {
-              resolutionStrategy {
-                  eachDependency { details ->
-                      if (details.requested.group == 'org.jetbrains.kotlin') {
-                          details.useVersion '1.9.25'
-                      }
-                  }
-              }
-          }
           EOF
 
       - name: Build Release APK
         script: |
-          # --no-shrink मुळे कोटलिनच्या कंपायलरवर ताण येणार नाही आणि बिल्ड फेल होणार नाही
           flutter build apk --release --no-shrink
     artifacts:
       - build/**/outputs/**/*.apk

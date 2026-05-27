@@ -1,26 +1,24 @@
 plugins {
     id "com.android.application"
-    id "kotlin-android"
+    id "org.jetbrains.kotlin.android"
     id "dev.flutter.flutter-gradle-plugin"
 }
 
 android {
-    // Replit ने सांगितल्याप्रमाणे आणि Android नियमांनुसार namespace
-    namespace = "com.codemagic.app" 
+    namespace = "com.codemagic.app"
     compileSdk = flutter.compileSdkVersion
     ndkVersion = flutter.ndkVersion
 
     compileOptions {
-        sourceCompatibility = JavaVersion.VERSION_1_8
-        targetCompatibility = JavaVersion.VERSION_1_8
+        sourceCompatibility = JavaVersion.VERSION_17
+        targetCompatibility = JavaVersion.VERSION_17
     }
 
     kotlinOptions {
-        jvmTarget = JavaVersion.VERSION_1_8
+        jvmTarget = "17"
     }
 
     defaultConfig {
-        // तुझा application ID
         applicationId = "com.codemagic.app"
         minSdk = flutter.minSdkVersion
         targetSdk = flutter.targetSdkVersion
@@ -30,19 +28,7 @@ android {
 
     buildTypes {
         release {
-            // release साठी नेहमी signingConfig वापरावी, debug नको
-            signingConfig = signingConfigs.create("release")
-        }
-    }
-}
-
-// खालील ओळी कोटलिनच्या चुकीच्या व्हर्जनला कंट्रोल करण्यासाठी ॲड करा
-configurations.all {
-    resolutionStrategy {
-        eachDependency { details ->
-            if (details.requested.group == 'org.jetbrains.kotlin' && details.requested.name.startsWith('kotlin-stdlib')) {
-                details.useVersion '1.9.0'
-            }
+            signingConfig = signingConfigs.debug
         }
     }
 }

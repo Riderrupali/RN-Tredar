@@ -16,11 +16,11 @@ workflows:
             --project-name code_magic_app \
             .
           
-          # 1. कोटलिन व्हर्जन फिक्स करा (हे सर्वात महत्त्वाचं आहे)
-          sed -i 's/id "org.jetbrains.kotlin.android" version "[^"]*"/id "org.jetbrains.kotlin.android" version "1.9.25"/' android/settings.gradle || true
-          echo "ext.kotlin_version=1.9.25" >> android/gradle.properties
+          # कोटलिन व्हर्जन 1.9.0 वर लॉक करा
+          echo "ext.kotlin_version = '1.9.0'" >> android/build.gradle
+          echo "org.jetbrains.kotlin.jvm.target=1.8" >> android/gradle.properties
           
-          # 2. Manifest फिक्स करा (हे पण याच स्टेपमध्ये करत आहोत)
+          # Manifest फिक्स करा
           cat > android/app/src/main/AndroidManifest.xml << 'EOF'
           <?xml version="1.0" encoding="utf-8"?>
           <manifest xmlns:android="http://schemas.android.com/apk/res/android">
@@ -45,7 +45,6 @@ workflows:
               </application>
           </manifest>
           EOF
-          echo "✅ Project generated, Kotlin patched, and Manifest updated."
 
       - name: Setup signing
         script: |
@@ -64,5 +63,6 @@ workflows:
 
       - name: Build Release APK
         script: |
-          flutter build apk --release --build-name=1.0.0 --build-number=1
+          # --no-shrink फ्लॅग वापरल्याने कोटलिन कंपायलर जास्त स्ट्रिक्ट राहणार नाही
+          flutter build apk --release --build-name=1.0.0 --build-number=1 --no-shrink
           

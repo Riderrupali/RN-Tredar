@@ -14,19 +14,23 @@ workflows:
 
       - name: Force Re-create Android Folder (v2 Embedding)
         script: |
-          # जुना अँड्रॉइड फोल्डर काढून टाकतोय
           rm -rf android
-          # नवीन अँड्रॉइड फोल्डर v2 एम्बेडिंगसह तयार करतोय
           flutter create --platforms=android .
 
-      - name: Update Kotlin Version
+      - name: Update Kotlin Version to 2.2.0
         script: |
-          # settings.gradle मध्ये कोटलिन व्हर्जन 2.2.0 सेट करतोय
-          sed -i 's/id "org.jetbrains.kotlin.android" version ".*"/id "org.jetbrains.kotlin.android" version "2.2.0"/g' android/settings.gradle
+          python3 - <<'EOF'
+          import re, os
+          sg_path = "android/settings.gradle"
+          if os.path.exists(sg_path):
+              with open(sg_path, "r") as f: content = f.read()
+              # हे रेगुलर एक्सप्रेशन ओळ शोधून ती 2.2.0 ने बदलेल
+              patched = re.sub(r'id\s+["\']org\.jetbrains\.kotlin\.android["\']\s+version\s+["\'][^"\']*["\']', r'id "org.jetbrains.kotlin.android" version "2.2.0"', content)
+              with open(sg_path, "w") as f: f.write(patched)
+          EOF
 
       - name: Build Release APK
         script: |
-          # 'flutter build apk' कमांड आता नवीन स्ट्रक्चर वापरून बिल्ड करेल
           flutter build apk --release --no-shrink
     artifacts:
       - build/**/outputs/**/*.apk

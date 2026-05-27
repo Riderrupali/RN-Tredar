@@ -15,21 +15,29 @@ workflows:
       - name: Generate fresh Android project
         script: flutter create --platforms android .
 
-      - name: Force Kotlin 1.9.25 (flutter_tts compatible)
+      - name: Patch Kotlin and Gradle Config
         script: |
+          # 1. Force Kotlin Version in settings.gradle
           python3 - <<'EOF'
           import re, os
           sg_path = "android/settings.gradle"
           if os.path.exists(sg_path):
-              with open(sg_path, "r") as f:
-                  content = f.read()
-              patched = re.sub(
-                  r'(id\s+["\']org\.jetbrains\.kotlin\.android["\']\s+version\s+)["\'][^"\']*["\']',
-                  r'\g<1>"1.9.25"',
-                  content
-              )
-              with open(sg_path, "w") as f:
-                  f.write(patched)
+              with open(sg_path, "r") as f: content = f.read()
+              patched = re.sub(r'(id\s+["\']org\.jetbrains\.kotlin\.android["\']\s+version\s+)["\'][^"\']*["\']', r'\g<1>"1.9.25"', content)
+              with open(sg_path, "w") as f: f.write(patched)
+          EOF
+
+          # 2. Force Resolution Strategy in build.gradle to fix 'Unit class' incompatibility
+          cat >> android/app/build.gradle << 'EOF'
+          configurations.all {
+              resolutionStrategy {
+                  eachDependency { details ->
+                      if (details.requested.group == 'org.jetbrains.kotlin') {
+                          details.useVersion '1.9.25'
+                      }
+                  }
+              }
+          }
           EOF
 
       - name: Build Release APK

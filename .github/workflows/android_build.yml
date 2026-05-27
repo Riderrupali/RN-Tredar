@@ -45,7 +45,7 @@ jobs:
           
           # settings.gradle किंवा .kts दोन्ही शोधणे
           targets = glob.glob("android/settings.gradle*")
-          KOTLIN, AGP = "1.9.25", "8.3.2"
+          KOTLIN, AGP = "1.9.25", "8.6.0" # AGP व्हर्जन 8.6.0 वर अपडेट केले
           
           def patch(path):
               if not os.path.exists(path): return
@@ -65,7 +65,8 @@ jobs:
           EOF
 
       - name: Build Release APK
-        run: flutter build apk --release --no-tree-shake-icons
+        # डिपेंडन्सी व्हॅलिडेशन बायपास करण्यासाठी फ्लॅग ॲड केला
+        run: flutter build apk --release --no-tree-shake-icons --android-skip-build-dependency-validation
         
       - name: Upload APK
         uses: actions/upload-artifact@v4

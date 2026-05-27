@@ -15,108 +15,48 @@ workflows:
 
       - name: Fix all compatibility issues (Kotlin + jcenter + AGP)
         script: |
+          # AGP 9+ चा एरर रोखण्यासाठी
+          echo "android.experimental.dependency.analysis.checkMode=none" >> android/gradle.properties
+
           cat > /tmp/fix_all.py << 'PYEOF'
           import re, os, subprocess
 
           KOTLIN_VERSION = "1.9.25"
           AGP_VERSION    = "8.3.2"
 
-          # ── 1. Patch project android/ gradle files ──────────────────────────
+          # 1. Patch project android/ gradle files
           project_files = [
-              "android/settings.gradle",
-              "android/settings.gradle.kts",
-              "android/build.gradle",
-              "android/build.gradle.kts",
-              "android/app/build.gradle",
-              "android/app/build.gradle.kts",
+              "android/settings.gradle", "android/settings.gradle.kts",
+              "android/build.gradle", "android/build.gradle.kts",
+              "android/app/build.gradle", "android/app/build.gradle.kts",
           ]
 
           def patch_file(path):
-              if not os.path.exists(path):
-                  return False
-              with open(path, "r") as f:
-                  before = f.read()
+              if not os.path.exists(path): return False
+              with open(path, "r") as f: before = f.read()
               after = before
-
-              # Fix Kotlin version
-              after = re.sub(
-                  r'''(id\s+['"]org\.jetbrains\.kotlin\.android['"]\s+version\s+)['"][^'"]*['"]''',
-                  lambda m: m.group(1) + f'"{KOTLIN_VERSION}"',
-                  after
-              )
-              after = re.sub(
-                  r"""(ext\.kotlin_version\s*=\s*)['"][^'"]*['"]""",
-                  lambda m: m.group(1) + f'"{KOTLIN_VERSION}"',
-                  after
-              )
-
-              # Fix AGP version
-              after = re.sub(
-                  r'''(id\s+['"]com\.android\.application['"]\s+version\s+)['"][^'"]*['"]''',
-                  lambda m: m.group(1) + f'"{AGP_VERSION}"',
-                  after
-              )
-              after = re.sub(
-                  r'''(id\s+['"]com\.android\.library['"]\s+version\s+)['"][^'"]*['"]''',
-                  lambda m: m.group(1) + f'"{AGP_VERSION}"',
-                  after
-              )
-              # classpath AGP (old style)
-              after = re.sub(
-                  r"""(com\.android\.tools\.build:gradle:)[^\s'"]+""",
-                  lambda m: m.group(1) + AGP_VERSION,
-                  after
-              )
-
-              # Remove jcenter()
-              after = after.replace("jcenter()", "// jcenter() removed (shutdown)")
-
+              # Fix Kotlin
+              after = re.sub(r'''(id\s+['"]org\.jetbrains\.kotlin\.android['"]\s+version\s+)['"][^'"]*['"]''', lambda m: m.group(1) + f'"{KOTLIN_VERSION}"', after)
+              # Fix AGP
+              after = re.sub(r'''(id\s+['"]com\.android\.application['"]\s+version\s+)['"][^'"]*['"]''', lambda m: m.group(1) + f'"{AGP_VERSION}"', after)
+              # Remove jcenter
+              after = after.replace("jcenter()", "mavenCentral()")
               if after != before:
-                  with open(path, "w") as f:
-                      f.write(after)
+                  with open(path, "w") as f: f.write(after)
                   print(f"  [PATCHED] {path}")
-                  return True
-              else:
-                  print(f"  [same]    {path}")
-                  return False
+              return True
 
-          print("=== Patching project android/ files ===")
-          for f in project_files:
-              patch_file(f)
+          for f in project_files: patch_file(f)
 
-          # ── 2. Remove jcenter() from ALL plugin gradle files in pub-cache ──
-          print("\n=== Removing jcenter() from pub-cache plugins ===")
-
+          # 2. Fix plugins in pub-cache
           pub_cache = os.path.expanduser("~/.pub-cache")
-          result = subprocess.run(
-              ["find", pub_cache, "-name", "build.gradle"],
-              capture_output=True, text=True
-          )
-          plugin_files = [p for p in result.stdout.strip().split("\n") if p]
-
-          fixed_plugins = 0
-          for path in plugin_files:
-              if not os.path.exists(path):
-                  continue
-              with open(path, "r") as f:
-                  content = f.read()
+          result = subprocess.run(["find", pub_cache, "-name", "build.gradle"], capture_output=True, text=True)
+          for path in result.stdout.strip().split("\n"):
+              if not path: continue
+              with open(path, "r") as f: content = f.read()
               if "jcenter()" in content:
-                  patched = content.replace("jcenter()", "// jcenter() removed (shutdown)")
-                  with open(path, "w") as f:
-                      f.write(patched)
-                  print(f"  [jcenter fixed] {path}")
-                  fixed_plugins += 1
-
-          print(f"\n✅ jcenter() removed from {fixed_plugins} plugin file(s)")
-
-          # ── 3. Verify final state ────────────────────────────────────────────
-          print("\n=== Final settings.gradle ===")
-          for sg in ["android/settings.gradle", "android/settings.gradle.kts"]:
-              if os.path.exists(sg):
-                  print(open(sg).read())
-
+                  with open(path, "w") as f: f.write(content.replace("jcenter()", "mavenCentral()"))
           PYEOF
-
           python3 /tmp/fix_all.py
 
       - name: Build Release APK
@@ -124,4 +64,4 @@ workflows:
 
     artifacts:
       - build/**/outputs/**/*.apk
-      - build/**/outputs/**/mapping.txt
+      

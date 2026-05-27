@@ -18,11 +18,12 @@ workflows:
             .
 
       # Step 2
-      - name: Update Kotlin Version
+      - name: Update Kotlin & Gradle Version
         script: |
           sed -i.bak 's/version "1.7.10"/version "2.1.0"/g' android/settings.gradle || true
           sed -i.bak "s/ext.kotlin_version = .*/ext.kotlin_version = '2.1.0'/g" android/build.gradle || true
 
+          sed -i.bak 's/com.android.tools.build:gradle:7.3.0/com.android.tools.build:gradle:7.3.1/g' android/build.gradle || true
       # Step 3
       - name: Flutter pub get
         script: |

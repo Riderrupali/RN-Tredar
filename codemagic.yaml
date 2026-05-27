@@ -21,7 +21,7 @@ workflows:
       - name: Update Kotlin version
         script: |
           sed -i '' 's/org.jetbrains.kotlin.android version "1.7.10"/org.jetbrains.kotlin.android version "1.9.24"/g' android/settings.gradle
-
+          
       # ── Step 3: Create pubspec ──
       - name: Create pubspec
         script: |

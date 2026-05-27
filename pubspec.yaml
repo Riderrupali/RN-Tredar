@@ -4,33 +4,33 @@ publish_to: 'none'
 version: 1.0.0+1
 
 environment:
-  sdk: '>=3.3.0 <4.0.0' # SDK व्हर्जन थोडं अपडेट केलंय
+  sdk: '>=3.3.0 <4.0.0'
 
 dependencies:
   flutter:
     sdk: flutter
 
-  # Voice — Speech to Text (offline)
+  # Voice — Speech to Text (Compatible)
   speech_to_text: ^7.0.0
 
-  # Voice — Text to Speech (Updated to fix Kotlin compatibility)
-  flutter_tts: ^4.3.0 
+  # Voice — Text to Speech (Stable version that works with Gradle)
+  flutter_tts: ^4.0.2
 
   # Local Database
-  sqflite: ^2.4.0
+  sqflite: ^2.3.2
   path: ^1.9.0
 
   # File Picker
-  file_picker: ^9.0.0
+  file_picker: ^8.0.3
 
   # OCR — Screen Text Reading
-  google_mlkit_text_recognition: ^0.15.0
+  google_mlkit_text_recognition: ^0.13.0
 
   # Image Picker
   image_picker: ^1.1.2
 
   # Screen Overlay
-  flutter_overlay_window: ^0.5.0
+  flutter_overlay_window: ^0.4.2
 
   # Permissions
   permission_handler: ^11.3.1

@@ -1,4 +1,4 @@
-workflows:
+workflows: 
   android-release:
     name: Code Magic — Trading App Release
     max_build_duration: 60

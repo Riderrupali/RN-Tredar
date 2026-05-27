@@ -17,17 +17,14 @@ workflows:
           rm -rf android
           flutter create --platforms=android .
 
-      - name: Update Kotlin Version to 2.2.0
+      - name: Update Compile SDK and Kotlin
         script: |
-          python3 - <<'EOF'
-          import re, os
-          sg_path = "android/settings.gradle"
-          if os.path.exists(sg_path):
-              with open(sg_path, "r") as f: content = f.read()
-              # हे रेगुलर एक्सप्रेशन ओळ शोधून ती 2.2.0 ने बदलेल
-              patched = re.sub(r'id\s+["\']org\.jetbrains\.kotlin\.android["\']\s+version\s+["\'][^"\']*["\']', r'id "org.jetbrains.kotlin.android" version "2.2.0"', content)
-              with open(sg_path, "w") as f: f.write(patched)
-          EOF
+          # compileSdk 36 वर सेट करण्यासाठी
+          sed -i 's/compileSdk = .*/compileSdk = 36/g' android/app/build.gradle || true
+          sed -i 's/compileSdkVersion .*/compileSdkVersion 36/g' android/app/build.gradle || true
+          
+          # कोटलिन व्हर्जन 2.2.0 साठी
+          python3 -c 'import re, os; f="android/settings.gradle"; c=open(f).read(); open(f, "w").write(re.sub(r"id\s+[\x27\x22]org\.jetbrains\.kotlin\.android[\x27\x22]\s+version\s+[\x27\x22][^\x27\x22]*[\x27\x22]", "id \"org.jetbrains.kotlin.android\" version \"2.2.0\"", c))'
 
       - name: Build Release APK
         script: |

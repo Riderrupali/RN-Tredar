@@ -6,6 +6,9 @@ workflows:
       flutter: stable
       java: 17
     scripts:
+      - name: Upgrade dependencies
+        script: flutter pub upgrade
+
       - name: Get Flutter packages
         script: flutter pub get
 
@@ -14,18 +17,12 @@ workflows:
 
       - name: Force Kotlin 1.9.25 (flutter_tts compatible)
         script: |
-          echo "=== Before patch ==="
-          cat android/settings.gradle
-
           python3 - <<'EOF'
           import re, os
-
-          # --- settings.gradle patch ---
           sg_path = "android/settings.gradle"
           if os.path.exists(sg_path):
               with open(sg_path, "r") as f:
                   content = f.read()
-              # Match any kotlin version string (single or double quotes)
               patched = re.sub(
                   r'(id\s+["\']org\.jetbrains\.kotlin\.android["\']\s+version\s+)["\'][^"\']*["\']',
                   r'\g<1>"1.9.25"',
@@ -33,29 +30,10 @@ workflows:
               )
               with open(sg_path, "w") as f:
                   f.write(patched)
-              print("✅ settings.gradle patched")
-
-          # --- build.gradle patch (older Flutter projects) ---
-          bg_path = "android/build.gradle"
-          if os.path.exists(bg_path):
-              with open(bg_path, "r") as f:
-                  content = f.read()
-              patched = re.sub(
-                  r"(ext\.kotlin_version\s*=\s*)['\"][^'\"]*['\"]",
-                  r"\g<1>'1.9.25'",
-                  content
-              )
-              with open(bg_path, "w") as f:
-                  f.write(patched)
-              print("✅ build.gradle patched")
           EOF
-
-          echo "=== After patch ==="
-          cat android/settings.gradle
 
       - name: Build Release APK
         script: |
-          # इथे --no-shrink फ्लॅग ॲड केला आहे
           flutter build apk --release --no-shrink
     artifacts:
       - build/**/outputs/**/*.apk

@@ -31,8 +31,8 @@ jobs:
           cache: true
 
       - name: Flutter pub get
-        # SDK constraint चेक न करता पब गेट करणे
-        run: flutter pub get --no-sdk-check
+        # आता कोणताही फ्लॅग न वापरता सरळ कमांड वापरू
+        run: flutter pub get
 
       - name: Generate Android project
         run: |
@@ -57,7 +57,6 @@ jobs:
           EOF
 
       - name: Build Release APK
-        # `--no-shrink` मुळे R8 चे एरर येणार नाहीत
         run: flutter build apk --release --no-tree-shake-icons --no-shrink --android-skip-build-dependency-validation
         
       - name: Upload APK

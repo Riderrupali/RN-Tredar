@@ -1,0 +1,127 @@
+name: Android Build
+
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+    branches: [main, master]
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Java 17
+        uses: actions/setup-java@v4
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+
+      - name: Set up Flutter (stable)
+        uses: subosito/flutter-action@v2
+        with:
+          channel: 'stable'
+          cache: true
+
+      - name: Flutter pub get
+        run: flutter pub get
+
+      - name: Generate Android project
+        run: flutter create --platforms android .
+
+      - name: Create assets folder (prevents pubspec error)
+        run: mkdir -p assets
+
+      - name: Fix compatibility issues
+        run: |
+          python3 - << 'EOF'
+          import re, os, subprocess
+
+          KOTLIN = "2.2.20"
+          AGP    = "8.11.1"
+
+          # ── 1. Patch only the PROJECT's gradle files ─────────────────────────
+          # (change Kotlin + AGP + remove jcenter)
+          def patch_project_file(path):
+              if not os.path.exists(path):
+                  return
+              txt = open(path).read()
+              orig = txt
+
+              txt = re.sub(
+                  r'''(id\s*[\(]?\s*['"]org\.jetbrains\.kotlin\.android['"]\s*[\)]?\s+version\s+)['"][^'"]*['"]''',
+                  lambda m: m.group(1) + f'"{KOTLIN}"', txt)
+
+              txt = re.sub(
+                  r'''(id\s*[\(]?\s*['"]com\.android\.application['"]\s*[\)]?\s+version\s+)['"][^'"]*['"]''',
+                  lambda m: m.group(1) + f'"{AGP}"', txt)
+
+              txt = txt.replace("jcenter()", "// jcenter() removed")
+
+              if txt != orig:
+                  open(path, 'w').write(txt)
+                  print(f"  [PATCHED] {path}")
+              else:
+                  print(f"  [same]    {path}")
+
+          print("=== Patching project files ===")
+          for f in [
+              "android/settings.gradle",     "android/settings.gradle.kts",
+              "android/build.gradle",         "android/build.gradle.kts",
+              "android/app/build.gradle",     "android/app/build.gradle.kts",
+          ]:
+              patch_project_file(f)
+
+          # ── 2. Patch PLUGIN files — ONLY replace jcenter, keep their AGP/Kotlin ──
+          # Changing plugin AGP breaks the plugin Kotlin source compilation!
+          print("\n=== Patching plugin build.gradle (jcenter only) ===")
+
+          pub_cache = os.path.expanduser("~/.pub-cache")
+          result = subprocess.run(
+              ["find", pub_cache, "-name", "build.gradle"],
+              capture_output=True, text=True)
+          plugin_files = [p for p in result.stdout.strip().split("\n") if p and os.path.exists(p)]
+
+          fixed = 0
+          for path in plugin_files:
+              txt = open(path).read()
+              orig = txt
+
+              # ONLY replace jcenter with mavenCentral — do NOT touch AGP/Kotlin versions
+              txt = txt.replace("jcenter()", "mavenCentral()")
+
+              # If google() exists but mavenCentral() doesn't, add it
+              if "google()" in txt and "mavenCentral()" not in txt:
+                  txt = txt.replace("google()", "google()\n        mavenCentral()")
+
+              if txt != orig:
+                  open(path, 'w').write(txt)
+                  label = path.split("pub.dev/")[1].split("/")[0] if "pub.dev/" in path else path
+                  print(f"  [jcenter→mavenCentral] {label}")
+                  fixed += 1
+
+          print(f"\n✅ Fixed jcenter in {fixed} plugin file(s)")
+
+          # ── 3. Print final settings file ─────────────────────────────────────
+          for sg in ["android/settings.gradle.kts", "android/settings.gradle"]:
+              if os.path.exists(sg):
+                  print(f"\n=== {sg} ===")
+                  print(open(sg).read())
+                  break
+
+          EOF
+
+      - name: Build Release APK
+        run: flutter build apk --release --android-skip-build-dependency-validation
+
+      - name: Upload APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: release-apk
+          path: build/app/outputs/flutter-apk/app-release.apk
+          retention-days: 7

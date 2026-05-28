@@ -43,9 +43,9 @@ jobs:
           python3 - << 'EOF'
           import os, re, glob
           
-          # settings.gradle किंवा .kts दोन्ही शोधणे
           targets = glob.glob("android/settings.gradle*")
-          KOTLIN, AGP = "1.9.25", "8.6.0" # AGP व्हर्जन 8.6.0 वर अपडेट केले
+          # AGP व्हर्जन आता 8.9.1 वर सेट केले
+          KOTLIN, AGP = "1.9.25", "8.9.1" 
           
           def patch(path):
               if not os.path.exists(path): return
@@ -59,13 +59,11 @@ jobs:
               open(path, 'w').write(txt)
               print(f"PATCHED: {path}")
 
-          # सर्व फाईल्सना पॅच करा
           for f in targets + glob.glob("android/build.gradle*") + glob.glob("android/app/build.gradle*"):
               patch(f)
           EOF
 
       - name: Build Release APK
-        # डिपेंडन्सी व्हॅलिडेशन बायपास करण्यासाठी फ्लॅग ॲड केला
         run: flutter build apk --release --no-tree-shake-icons --android-skip-build-dependency-validation
         
       - name: Upload APK

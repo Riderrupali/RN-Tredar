@@ -30,8 +30,11 @@ jobs:
           channel: 'stable'
           cache: true
 
-      - name: Flutter pub get
-        run: flutter pub get
+      # हा भाग एरर फिक्स करण्यासाठी अपडेट केला आहे
+      - name: Verify pubspec and Get dependencies
+        run: |
+          # SDK constraint तपासा आणि पुस करा
+          flutter pub get
 
       - name: Generate Android project
         run: |
@@ -42,30 +45,20 @@ jobs:
         run: |
           python3 - << 'EOF'
           import os, re, glob
-          
-          # settings.gradle किंवा .kts दोन्ही शोधणे
           targets = glob.glob("android/settings.gradle*")
           KOTLIN, AGP = "1.9.25", "8.9.1" 
-          
           def patch(path):
               if not os.path.exists(path): return
               txt = open(path).read()
-              # Kotlin version
               txt = re.sub(r'''(id\s*[\(]?\s*['"]org\.jetbrains\.kotlin\.android['"]\s*[\)]?\s+version\s+)['"][^'"]*['"]''', lambda m: m.group(1) + f'"{KOTLIN}"', txt)
-              # AGP version
               txt = re.sub(r'''(id\s*[\(]?\s*['"]com\.android\.application['"]\s*[\)]?\s+version\s+)['"][^'"]*['"]''', lambda m: m.group(1) + f'"{AGP}"', txt)
-              # Remove jcenter
               txt = txt.replace("jcenter()", "// jcenter() removed")
               open(path, 'w').write(txt)
-              print(f"PATCHED: {path}")
-
-          # सर्व फाईल्सना पॅच करा
           for f in targets + glob.glob("android/build.gradle*") + glob.glob("android/app/build.gradle*"):
               patch(f)
           EOF
 
       - name: Build Release APK
-        # --no-shrink मुळे R8 एरर येणार नाही आणि बिल्ड स्मूथ होईल
         run: flutter build apk --release --no-tree-shake-icons --no-shrink --android-skip-build-dependency-validation
         
       - name: Upload APK

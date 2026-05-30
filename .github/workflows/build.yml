@@ -26,7 +26,13 @@ jobs:
           eas-version: latest
           token: ${{ secrets.EXPO_TOKEN }}
 
-      - name: Build APK
-        run: EAS_PROJECT_ID=650e483d-86b0-4c3a-97fd-c91e1eff91da npx eas-cli build --platform android --non-interactive --profile preview
+      - name: Clean existing config
+        run: rm -rf .eas/
+
+      - name: Initialize and Build
+        run: |
+          npx eas-cli init --id 650e483d-86b0-4c3a-97fd-c91e1eff91da --non-interactive
+          npx eas-cli build --platform android --non-interactive --profile preview
         env:
           EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
+          

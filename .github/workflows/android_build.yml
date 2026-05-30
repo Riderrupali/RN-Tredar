@@ -34,27 +34,24 @@ jobs:
       - name: Generate Android project
         run: flutter create --platforms android .
 
-      # Minification आणि Proguard Rules फिक्स करण्यासाठी
+      # सुधारित: आता R8/Minification दोन्ही फॉरमॅटसाठी फिक्स होईल
       - name: Fix Build Configuration
         run: |
-          # 1. Python वापरून R8 Minification disable करणे
           python3 - << 'PYEOF'
-          import re
-          path = 'android/app/build.gradle'
-          with open(path, 'r') as f:
-              content = f.read()
-          # 'release' ब्लॉक शोधून त्यात setting टाकणे
-          patched = re.sub(
-              r'(release\s*\{)',
-              'release {\n            minifyEnabled false\n            shrinkResources false',
-              content
-          )
-          with open(path, 'w') as f:
-              f.write(patched)
-          print("✅ build.gradle patched successfully")
+          import os
+          files = ['android/app/build.gradle', 'android/app/build.gradle.kts']
+          for path in files:
+              if os.path.exists(path):
+                  with open(path, 'r') as f:
+                      content = f.read()
+                  # दोन्ही पॅरामीटर्स disable करणे
+                  patched = content.replace('minifyEnabled true', 'minifyEnabled false')
+                  patched = patched.replace('shrinkResources true', 'shrinkResources false')
+                  with open(path, 'w') as f:
+                      f.write(patched)
+                  print(f"✅ {path} patched successfully")
           PYEOF
           
-          # 2. ML Kit Proguard Rules ॲड करणे
           mkdir -p android/app
           cat >> android/app/proguard-rules.pro << 'EOF'
           -keep class com.google.mlkit.vision.text.** { *; }

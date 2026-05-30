@@ -1,57 +1,45 @@
-name: Android Build
+name: Flutter Android Build
 
 on:
   push:
-    branches: [main, master]
+    branches: [ main, master ]
   pull_request:
-    branches: [main, master]
+    branches: [ main, master ]
   workflow_dispatch:
 
 jobs:
   build:
     runs-on: ubuntu-latest
-    timeout-minutes: 30
 
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Set up Java 17
+      - name: Setup Java
         uses: actions/setup-java@v4
         with:
+          distribution: 'zulu'
           java-version: '17'
-          distribution: 'temurin'
 
-      - name: Set up Flutter (stable)
+      - name: Setup Flutter
         uses: subosito/flutter-action@v2
         with:
+          flutter-version: '3.24.0'
           channel: 'stable'
-          cache: true
 
-      - name: Flutter pub get
+      - name: Get dependencies
         run: flutter pub get
 
       - name: Generate Android project
         run: flutter create --platforms android .
 
-      # सुधारित: आता R8/Minification दोन्ही फॉरमॅटसाठी फिक्स होईल
-      - name: Fix Build Configuration
+      - name: Disable R8 and Apply Proguard Rules
         run: |
-          python3 - << 'PYEOF'
-          import os
-          files = ['android/app/build.gradle', 'android/app/build.gradle.kts']
-          for path in files:
-              if os.path.exists(path):
-                  with open(path, 'r') as f:
-                      content = f.read()
-                  # दोन्ही पॅरामीटर्स disable करणे
-                  patched = content.replace('minifyEnabled true', 'minifyEnabled false')
-                  patched = patched.replace('shrinkResources true', 'shrinkResources false')
-                  with open(path, 'w') as f:
-                      f.write(patched)
-                  print(f"✅ {path} patched successfully")
-          PYEOF
+          # R8 बंद करणे
+          echo "android.enableR8=false" >> android/gradle.properties
+          echo "android.enableR8.fullMode=false" >> android/gradle.properties
           
+          # ML Kit Proguard Rules ॲड करणे
           mkdir -p android/app
           cat >> android/app/proguard-rules.pro << 'EOF'
           -keep class com.google.mlkit.vision.text.** { *; }
@@ -61,7 +49,7 @@ jobs:
           -keep class com.google.mlkit.vision.text.korean.** { *; }
           EOF
 
-      - name: Fix all compatibility issues
+      - name: Fix Compatibility Issues
         run: |
           python3 - << 'EOF'
           import re, os, subprocess
@@ -69,32 +57,25 @@ jobs:
           KOTLIN = "2.2.20"
           AGP    = "8.11.1"
 
-          def patch_project_file(path):
-              if not os.path.exists(path): return
-              txt = open(path).read()
-              orig = txt
-              txt = re.sub(r'''(id\s*[\(]?\s*['"]org\.jetbrains\.kotlin\.android['"]\s*[\)]?\s+version\s+)['"][^'"]*['"]''', lambda m: m.group(1) + f'"{KOTLIN}"', txt)
-              txt = re.sub(r'''(id\s*[\(]?\s*['"]com\.android\.application['"]\s*[\)]?\s+version\s+)['"][^'"]*['"]''', lambda m: m.group(1) + f'"{AGP}"', txt)
-              txt = txt.replace("jcenter()", "// jcenter() removed")
-              if txt != orig: open(path, 'w').write(txt)
-
+          # Gradle फाइल्स पॅच करणे
           for f in ["android/settings.gradle", "android/settings.gradle.kts", "android/build.gradle", "android/build.gradle.kts", "android/app/build.gradle", "android/app/build.gradle.kts"]:
-              patch_project_file(f)
+              if os.path.exists(f):
+                  txt = open(f).read()
+                  txt = txt.replace("jcenter()", "mavenCentral()")
+                  open(f, 'w').write(txt)
 
+          # प्लगिन्सचे ग्रेडल्स पॅच करणे
           pub_cache = os.path.expanduser("~/.pub-cache")
           result = subprocess.run(["find", pub_cache, "-name", "build.gradle"], capture_output=True, text=True)
           for path in result.stdout.strip().split("\n"):
               if path and os.path.exists(path):
                   txt = open(path).read()
-                  orig = txt
                   txt = txt.replace("jcenter()", "mavenCentral()")
                   txt = re.sub(r"""(classpath\s+['"]com\.android\.tools\.build:gradle:)[^'"]+(['"])""", lambda m: m.group(1) + AGP + m.group(2), txt)
-                  txt = re.sub(r"""(ext\.kotlin_version\s*=\s*)['"][^'"]*['"]""", lambda m: m.group(1) + f'"{KOTLIN}"', txt)
-                  txt = re.sub(r"""(classpath\s+['"]org\.jetbrains\.kotlin:kotlin-gradle-plugin:)[^'"]+(['"])""", lambda m: m.group(1) + KOTLIN + m.group(2), txt)
-                  if txt != orig: open(path, 'w').write(txt)
+                  open(path, 'w').write(txt)
           EOF
 
-      - name: Build Release APK
+      - name: Build APK
         run: flutter build apk --release --android-skip-build-dependency-validation
 
       - name: Upload APK
@@ -102,5 +83,4 @@ jobs:
         with:
           name: release-apk
           path: build/app/outputs/flutter-apk/app-release.apk
-          retention-days: 7
           

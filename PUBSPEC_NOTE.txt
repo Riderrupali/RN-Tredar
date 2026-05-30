@@ -1,6 +1,0 @@
-# pubspec.yaml मध्ये हे dependencies असाव्यात:
-  # shared_preferences: ^2.2.2   ← settings screen साठी
-  # flutter_overlay_window: ^0.4.5  ← overlay साठी (आधीच आहे)
-  # image_picker: ^1.0.7  (आधीच आहे)
-  # file_picker: ^6.1.1   (आधीच आहे)
-  

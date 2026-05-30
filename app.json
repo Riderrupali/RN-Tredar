@@ -1,6 +1,6 @@
 {
   "expo": {
-    "name": "Code Magic Trading App",
+    "name": "RN Tredar🧐",
     "slug": "code-magic",
     "version": "1.0.0",
     "orientation": "portrait",
@@ -15,12 +15,7 @@
     },
     "ios": {
       "supportsTablet": false,
-      "bundleIdentifier": "com.codemagic.trading",
-      "infoPlist": {
-        "NSMicrophoneUsageDescription": "Trading commands saaathi mic use hote.",
-        "NSPhotoLibraryUsageDescription": "Chart images scan karayla gallery access lagto.",
-        "NSPhotoLibraryAddUsageDescription": "Photos save karayla."
-      }
+      "bundleIdentifier": "com.codemagic.trading"
     },
     "android": {
       "adaptiveIcon": {
@@ -28,27 +23,10 @@
         "backgroundColor": "#0A0E1A"
       },
       "package": "com.codemagic.trading",
-      "permissions": [
-        "RECORD_AUDIO",
-        "READ_EXTERNAL_STORAGE",
-        "WRITE_EXTERNAL_STORAGE",
-        "READ_MEDIA_IMAGES",
-        "VIBRATE",
-        "INTERNET"
-      ],
       "versionCode": 1
     },
-    "web": {
-      "favicon": "./assets/images/icon.png",
-      "bundler": "metro"
-    },
     "plugins": [
-      [
-        "expo-router",
-        {
-          "origin": "https://replit.com/"
-        }
-      ],
+      "expo-router",
       "expo-font",
       "expo-web-browser",
       [
@@ -58,10 +36,6 @@
           "cameraPermission": false
         }
       ]
-    ],
-    "experiments": {
-      "typedRoutes": true,
-      "reactCompiler": true
-    }
+    ]
   }
 }

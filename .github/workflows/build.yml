@@ -26,8 +26,10 @@ jobs:
           eas-version: latest
           token: ${{ secrets.EXPO_TOKEN }}
 
-      - name: Build APK
-        run: npx eas-cli build --platform android --non-interactive --profile preview
+      # ही स्टेप सगळ्यात महत्त्वाची आहे:
+      - name: Link and Build
+        run: |
+          npx eas-cli build --platform android --non-interactive --profile preview --auto-submit
         env:
           EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
           

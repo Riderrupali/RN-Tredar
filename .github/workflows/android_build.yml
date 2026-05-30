@@ -32,10 +32,27 @@ jobs:
       - name: Generate Android folder
         run: flutter create --platforms android --project-name rn_tredar .
 
-      - name: Disable R8 via gradle.properties
+      - name: Disable R8 minification
         run: |
-          echo "android.enableR8=false" >> android/gradle.properties
-          echo "android.enableR8.fullMode=false" >> android/gradle.properties
+          python3 << 'EOF'
+          import re
+
+          with open('android/app/build.gradle', 'r') as f:
+              content = f.read()
+
+          # release buildType मध्ये minifyEnabled false add करा
+          content = re.sub(
+              r'(buildTypes\s*\{[^}]*release\s*\{)',
+              r'\1\n            minifyEnabled false\n            shrinkResources false',
+              content,
+              flags=re.DOTALL
+          )
+
+          with open('android/app/build.gradle', 'w') as f:
+              f.write(content)
+
+          print("✅ minifyEnabled false added successfully")
+          EOF
 
       - name: Build APK
         run: flutter build apk --release --android-skip-build-dependency-validation

@@ -32,27 +32,31 @@ jobs:
       - name: Fix speech_to_text build.gradle
         run: |
           python3 << 'EOF'
-          import glob, os, re
+          import glob, os
 
           pattern = os.path.expanduser('~/.pub-cache/hosted/pub.dev/speech_to_text*/android/build.gradle')
           files = glob.glob(pattern)
           print(f"Found: {files}")
 
+          replacements = {
+              'flutter.compileSdkVersion': '35',
+              'flutter.compileSdk': '35',
+              'flutter.minSdkVersion': '21',
+              'flutter.minSdk': '21',
+              'flutter.targetSdkVersion': '34',
+              'flutter.targetSdk': '34',
+              'flutter.ndkVersion': '"25.1.8937393"',
+          }
+
           for f in files:
               with open(f, 'r') as fp:
                   content = fp.read()
-              print(f"Original:\n{content[:300]}")
-
-              content = re.sub(r'flutter\.compileSdkVersion', '35', content)
-              content = re.sub(r'flutter\.compileSdk\b', '35', content)
-              content = re.sub(r'flutter\.minSdkVersion', '21', content)
-              content = re.sub(r'flutter\.minSdk\b', '21', content)
-              content = re.sub(r'flutter\.targetSdkVersion', '34', content)
-              content = re.sub(r'flutter\.targetSdk\b', '34', content)
-
+              for old, new in replacements.items():
+                  content = content.replace(old, new)
               with open(f, 'w') as fp:
                   fp.write(content)
-              print(f"Patched:\n{content[:300]}\n✅ Done")
+              print(f"✅ Patched: {f}")
+              print(content[:400])
           EOF
 
       - name: Generate Android folder

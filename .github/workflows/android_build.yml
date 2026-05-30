@@ -34,9 +34,14 @@ jobs:
       - name: Generate Android project
         run: flutter create --platforms android .
 
-      # नवीन Proguard Rules साठीची स्टेप
-      - name: Fix ML Kit R8 Proguard Rules
+      # Minification आणि Proguard Rules फिक्स करण्यासाठी
+      - name: Fix Build Configuration
         run: |
+          # 1. R8 Minification disable करणे
+          sed -i 's/minifyEnabled true/minifyEnabled false/g' android/app/build.gradle || echo "minifyEnabled not found"
+          sed -i 's/shrinkResources true/shrinkResources false/g' android/app/build.gradle || echo "shrinkResources not found"
+          
+          # 2. ML Kit Proguard Rules ॲड करणे
           mkdir -p android/app
           cat >> android/app/proguard-rules.pro << 'EOF'
           -keep class com.google.mlkit.vision.text.** { *; }

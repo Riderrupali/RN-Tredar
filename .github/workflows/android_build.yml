@@ -37,9 +37,22 @@ jobs:
       # Minification आणि Proguard Rules फिक्स करण्यासाठी
       - name: Fix Build Configuration
         run: |
-          # 1. R8 Minification disable करणे
-          sed -i 's/minifyEnabled true/minifyEnabled false/g' android/app/build.gradle || echo "minifyEnabled not found"
-          sed -i 's/shrinkResources true/shrinkResources false/g' android/app/build.gradle || echo "shrinkResources not found"
+          # 1. Python वापरून R8 Minification disable करणे
+          python3 - << 'PYEOF'
+          import re
+          path = 'android/app/build.gradle'
+          with open(path, 'r') as f:
+              content = f.read()
+          # 'release' ब्लॉक शोधून त्यात setting टाकणे
+          patched = re.sub(
+              r'(release\s*\{)',
+              'release {\n            minifyEnabled false\n            shrinkResources false',
+              content
+          )
+          with open(path, 'w') as f:
+              f.write(patched)
+          print("✅ build.gradle patched successfully")
+          PYEOF
           
           # 2. ML Kit Proguard Rules ॲड करणे
           mkdir -p android/app

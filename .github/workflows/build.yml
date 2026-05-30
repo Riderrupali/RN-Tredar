@@ -27,9 +27,7 @@ jobs:
           token: ${{ secrets.EXPO_TOKEN }}
 
       - name: Build APK
-        run: |
-          npx eas-cli project:init --id "1c7d2426-5b7d-4f15-8854-8e1e355c3258" --non-interactive
-          npx eas-cli build --platform android --non-interactive --profile preview
+        run: npx eas-cli build --platform android --non-interactive --profile preview
         env:
           EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
           

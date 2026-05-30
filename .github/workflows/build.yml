@@ -26,12 +26,6 @@ jobs:
           eas-version: latest
           token: ${{ secrets.EXPO_TOKEN }}
 
-      # ही कमांड प्रोजेक्ट कॉन्फिगर करण्यासाठी एकदम योग्य आहे:
-      - name: Configure EAS
-        run: npx eas-cli build:configure -p android --non-interactive
-        env:
-          EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
-
       - name: Build APK
         run: npx eas-cli build --platform android --non-interactive --profile preview
         env:

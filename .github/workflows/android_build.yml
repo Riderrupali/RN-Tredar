@@ -5,6 +5,7 @@ on:
     branches: [ main, master ]
   pull_request:
     branches: [ main, master ]
+  workflow_dispatch:
 
 jobs:
   build:
@@ -32,20 +33,24 @@ jobs:
       - name: Generate Android folder
         run: flutter create --platforms android --project-name rn_tredar .
 
-      - name: Disable R8 minification
+      - name: Disable R8 and Patch Gradle
         run: |
-          python3 << 'EOF'
-          import re
-          with open('android/app/build.gradle', 'r') as f:
-              content = f.read()
-          content = re.sub(
-              r'(release\s*\{)',
-              'release {\n            minifyEnabled false\n            shrinkResources false',
-              content
-          )
-          with open('android/app/build.gradle', 'w') as f:
-              f.write(content)
-          print("✅ Done")
+          python3 - << 'EOF'
+          import os
+          # .gradle आणि .gradle.kts दोन्ही तपासण्यासाठी
+          files = ['android/app/build.gradle', 'android/app/build.gradle.kts']
+          for path in files:
+              if os.path.exists(path):
+                  with open(path, 'r') as f:
+                      content = f.read()
+                  
+                  # R8 आणि Minification डिसेबल करणे
+                  content = content.replace('minifyEnabled true', 'minifyEnabled false')
+                  content = content.replace('shrinkResources true', 'shrinkResources false')
+                  
+                  with open(path, 'w') as f:
+                      f.write(content)
+                  print(f"✅ {path} patched")
           EOF
 
       - name: Build APK
@@ -56,3 +61,5 @@ jobs:
         with:
           name: release-apk
           path: build/app/outputs/flutter-apk/app-release.apk
+          retention-days: 7
+          

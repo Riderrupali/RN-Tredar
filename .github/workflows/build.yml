@@ -19,13 +19,13 @@ jobs:
       - name: Install Dependencies
         run: npm install --legacy-peer-deps
 
-      - name: Setup Expo
+          - name: Setup Expo
         uses: expo/expo-github-action@v8
         with:
           expo-version: latest
           eas-version: latest
           token: ${{ secrets.EXPO_TOKEN }}
 
-      - name: Build APK
-        run: npx eas-cli build --platform android --non-interactive --profile preview
-        
+      # ही नवीन ओळ ऍड कर:
+      - name: Initialize EAS
+        run: npx eas-cli init --id "tuza-project-id-ithe-tak" --non-interactive

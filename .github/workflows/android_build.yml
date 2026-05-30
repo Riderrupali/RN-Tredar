@@ -5,7 +5,6 @@ on:
     branches: [ main, master ]
   pull_request:
     branches: [ main, master ]
-  workflow_dispatch:
 
 jobs:
   build:
@@ -24,33 +23,55 @@ jobs:
       - name: Setup Flutter
         uses: subosito/flutter-action@v2
         with:
-          flutter-version: '3.16.9'
+          flutter-version: '3.22.3'
           channel: 'stable'
 
       - name: Get dependencies
         run: flutter pub get
 
+      - name: Fix speech_to_text build.gradle
+        run: |
+          python3 << 'EOF'
+          import glob, os, re
+
+          pattern = os.path.expanduser('~/.pub-cache/hosted/pub.dev/speech_to_text*/android/build.gradle')
+          files = glob.glob(pattern)
+          print(f"Found: {files}")
+
+          for f in files:
+              with open(f, 'r') as fp:
+                  content = fp.read()
+              print(f"Original:\n{content[:300]}")
+
+              content = re.sub(r'flutter\.compileSdkVersion', '35', content)
+              content = re.sub(r'flutter\.compileSdk\b', '35', content)
+              content = re.sub(r'flutter\.minSdkVersion', '21', content)
+              content = re.sub(r'flutter\.minSdk\b', '21', content)
+              content = re.sub(r'flutter\.targetSdkVersion', '34', content)
+              content = re.sub(r'flutter\.targetSdk\b', '34', content)
+
+              with open(f, 'w') as fp:
+                  fp.write(content)
+              print(f"Patched:\n{content[:300]}\n✅ Done")
+          EOF
+
       - name: Generate Android folder
         run: flutter create --platforms android --project-name rn_tredar .
 
-      - name: Disable R8 and Patch Gradle
+      - name: Disable R8 minification
         run: |
-          python3 - << 'EOF'
-          import os
-          # .gradle आणि .gradle.kts दोन्ही तपासण्यासाठी
-          files = ['android/app/build.gradle', 'android/app/build.gradle.kts']
-          for path in files:
-              if os.path.exists(path):
-                  with open(path, 'r') as f:
-                      content = f.read()
-                  
-                  # R8 आणि Minification डिसेबल करणे
-                  content = content.replace('minifyEnabled true', 'minifyEnabled false')
-                  content = content.replace('shrinkResources true', 'shrinkResources false')
-                  
-                  with open(path, 'w') as f:
-                      f.write(content)
-                  print(f"✅ {path} patched")
+          python3 << 'EOF'
+          import re
+          with open('android/app/build.gradle', 'r') as f:
+              content = f.read()
+          content = re.sub(
+              r'(release\s*\{)',
+              'release {\n            minifyEnabled false\n            shrinkResources false',
+              content
+          )
+          with open('android/app/build.gradle', 'w') as f:
+              f.write(content)
+          print("✅ minifyEnabled false added")
           EOF
 
       - name: Build APK
@@ -61,5 +82,3 @@ jobs:
         with:
           name: release-apk
           path: build/app/outputs/flutter-apk/app-release.apk
-          retention-days: 7
-          

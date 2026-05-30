@@ -30,5 +30,4 @@ jobs:
         run: npx eas-cli build --platform android --non-interactive --profile preview
         env:
           EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
-          EAS_PROJECT_ID: "650e483d-86b0-4c3a-97fd-c91e1eff91da"
           

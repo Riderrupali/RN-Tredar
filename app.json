@@ -4,7 +4,6 @@
     "slug": "code-magic",
     "owner": "riderrupali170",
     "version": "1.0.0",
-    "projectId": "650e483d-86b0-4c3a-97fd-c91e1eff91da",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
     "scheme": "RN_Treder",
@@ -38,6 +37,11 @@
           "cameraPermission": false
         }
       ]
-    ]
+    ],
+    "extra": {
+      "eas": {
+        "projectId": "650e483d-86b0-4c3a-97fd-c91e1eff91da"
+      }
+    }
   }
 }

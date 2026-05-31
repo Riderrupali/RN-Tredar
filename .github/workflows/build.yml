@@ -7,6 +7,9 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
+    env:
+      EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
+      EAS_PROJECT_ID: "650e483d-86b0-4c3a-97fd-c91e1eff91da"
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -28,7 +31,4 @@ jobs:
 
       - name: Build Android APK
         run: npx eas-cli build --platform android --non-interactive --profile preview
-        env:
-          EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
-          EAS_PROJECT_ID: "650e483d-86b0-4c3a-97fd-c91e1eff91da"
-          
+        

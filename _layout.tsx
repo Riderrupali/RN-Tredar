@@ -1,38 +1,17 @@
 import { BlurView } from "expo-blur";
-import { isLiquidGlassAvailable } from "expo-glass-effect";
-import { Tabs, router } from "expo-router";
-import { Icon, Label, NativeTabs } from "expo-router/unstable-native-tabs";
-import { SymbolView } from "expo-symbols";
+import { Tabs } from "expo-router";
 import { Feather, MaterialCommunityIcons } from "@expo/vector-icons";
-import React, { useEffect } from "react";
+import React from "react";
 import { Platform, StyleSheet, View, useColorScheme } from "react-native";
 import { useColors } from "@/hooks/useColors";
 import { useApp } from "@/context/AppContext";
 
-function NativeTabLayout() {
-  return (
-    <NativeTabs>
-      <NativeTabs.Trigger name="index">
-        <Icon sf={{ default: "iphone", selected: "iphone" }} />
-        <Label>Monitor</Label>
-      </NativeTabs.Trigger>
-      <NativeTabs.Trigger name="chat">
-        <Icon sf={{ default: "message", selected: "message.fill" }} />
-        <Label>Chat</Label>
-      </NativeTabs.Trigger>
-      <NativeTabs.Trigger name="knowledge">
-        <Icon sf={{ default: "brain", selected: "brain.fill" }} />
-        <Label>Knowledge</Label>
-      </NativeTabs.Trigger>
-      <NativeTabs.Trigger name="settings">
-        <Icon sf={{ default: "gearshape", selected: "gearshape.fill" }} />
-        <Label>Settings</Label>
-      </NativeTabs.Trigger>
-    </NativeTabs>
-  );
-}
+let SymbolView: any = null;
+try {
+  SymbolView = require("expo-symbols").SymbolView;
+} catch {}
 
-function ClassicTabLayout() {
+export default function TabLayout() {
   const colors = useColors();
   const colorScheme = useColorScheme();
   const isDark = colorScheme === "dark";
@@ -62,7 +41,9 @@ function ClassicTabLayout() {
               style={StyleSheet.absoluteFill}
             />
           ) : isWeb ? (
-            <View style={[StyleSheet.absoluteFill, { backgroundColor: colors.card }]} />
+            <View
+              style={[StyleSheet.absoluteFill, { backgroundColor: colors.card }]}
+            />
           ) : null,
         tabBarLabelStyle: { fontSize: 10, fontWeight: "600" as const },
       }}
@@ -72,7 +53,7 @@ function ClassicTabLayout() {
         options={{
           title: "Monitor",
           tabBarIcon: ({ color }) =>
-            isIOS ? (
+            isIOS && SymbolView ? (
               <SymbolView name="iphone" tintColor={color} size={22} />
             ) : (
               <Feather name="smartphone" size={21} color={color} />
@@ -84,7 +65,7 @@ function ClassicTabLayout() {
         options={{
           title: "Chat",
           tabBarIcon: ({ color }) =>
-            isIOS ? (
+            isIOS && SymbolView ? (
               <SymbolView name="message" tintColor={color} size={22} />
             ) : (
               <Feather name="message-circle" size={21} color={color} />
@@ -96,7 +77,7 @@ function ClassicTabLayout() {
         options={{
           title: "Knowledge",
           tabBarIcon: ({ color }) =>
-            isIOS ? (
+            isIOS && SymbolView ? (
               <SymbolView name="brain" tintColor={color} size={22} />
             ) : (
               <MaterialCommunityIcons name="brain" size={22} color={color} />
@@ -108,7 +89,7 @@ function ClassicTabLayout() {
         options={{
           title: "Settings",
           tabBarIcon: ({ color }) =>
-            isIOS ? (
+            isIOS && SymbolView ? (
               <SymbolView name="gearshape" tintColor={color} size={22} />
             ) : (
               <Feather name="settings" size={21} color={color} />
@@ -117,11 +98,4 @@ function ClassicTabLayout() {
       />
     </Tabs>
   );
-}
-
-export default function TabLayout() {
-  if (isLiquidGlassAvailable()) {
-    return <NativeTabLayout />;
-  }
-  return <ClassicTabLayout />;
 }

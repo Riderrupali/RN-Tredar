@@ -1,4 +1,8 @@
 {
+  "cli": {
+    "version": ">= 10.0.0",
+    "appVersionSource": "local"
+  },
   "build": {
     "development": {
       "developmentClient": true,
@@ -24,4 +28,3 @@
     "production": {}
   }
 }
-

@@ -492,3 +492,4 @@ const styles = StyleSheet.create({
   bubbleText: { fontSize: 14, lineHeight: 20 },
   bubbleTime: { fontSize: 10, alignSelf: "flex-end" },
 });
+        

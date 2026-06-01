@@ -1,10 +1,10 @@
-import React, { useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import { BlurView } from "expo-blur";
 import { Tabs } from "expo-router";
 import * as SplashScreen from "expo-splash-screen";
 import { Feather, MaterialCommunityIcons } from "@expo/vector-icons";
 import { Platform, StyleSheet, View } from "react-native";
-import { useColors } from "@/hooks/useColors";
+import { AppProvider } from "@/context/AppContext";
 
 SplashScreen.preventAutoHideAsync();
 
@@ -13,13 +13,25 @@ try {
   SymbolView = require("expo-symbols").SymbolView;
 } catch {}
 
-export default function TabLayout() {
-  const colors = useColors();
+function TabsLayout() {
+  const [isDark] = useState(true);
   const isIOS = Platform.OS === "ios";
   const isWeb = Platform.OS === "web";
 
+  const colors = {
+    primary: "#2A6EFF",
+    mutedForeground: "#64748B",
+    card: "#111827",
+    border: "#1E2A3A",
+  };
+
   useEffect(() => {
-    SplashScreen.hideAsync();
+    const hide = async () => {
+      try {
+        await SplashScreen.hideAsync();
+      } catch {}
+    };
+    hide();
   }, []);
 
   return (
@@ -103,5 +115,13 @@ export default function TabLayout() {
         }}
       />
     </Tabs>
+  );
+}
+
+export default function RootLayout() {
+  return (
+    <AppProvider>
+      <TabsLayout />
+    </AppProvider>
   );
 }

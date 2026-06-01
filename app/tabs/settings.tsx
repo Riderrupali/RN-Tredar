@@ -4,7 +4,6 @@ import React from "react";
 import {
   Alert,
   Image,
-  ImageBackground,
   Platform,
   ScrollView,
   StyleSheet,
@@ -247,3 +246,4 @@ const styles = StyleSheet.create({
   aboutApp: { fontSize: 13 },
   aboutVersion: { fontSize: 11 },
 });
+

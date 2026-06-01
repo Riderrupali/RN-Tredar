@@ -1,9 +1,11 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect } from "react";
 import { BlurView } from "expo-blur";
 import { Tabs } from "expo-router";
 import * as SplashScreen from "expo-splash-screen";
 import { Feather, MaterialCommunityIcons } from "@expo/vector-icons";
 import { Platform, StyleSheet, View } from "react-native";
+import { SafeAreaProvider } from "react-native-safe-area-context";
+import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { AppProvider } from "@/context/AppContext";
 
 SplashScreen.preventAutoHideAsync();
@@ -13,17 +15,16 @@ try {
   SymbolView = require("expo-symbols").SymbolView;
 } catch {}
 
+const colors = {
+  primary: "#2A6EFF",
+  mutedForeground: "#64748B",
+  card: "#111827",
+  border: "#1E2A3A",
+};
+
 function TabsLayout() {
-  const [isDark] = useState(true);
   const isIOS = Platform.OS === "ios";
   const isWeb = Platform.OS === "web";
-
-  const colors = {
-    primary: "#2A6EFF",
-    mutedForeground: "#64748B",
-    card: "#111827",
-    border: "#1E2A3A",
-  };
 
   useEffect(() => {
     const hide = async () => {
@@ -120,8 +121,12 @@ function TabsLayout() {
 
 export default function RootLayout() {
   return (
-    <AppProvider>
-      <TabsLayout />
-    </AppProvider>
+    <GestureHandlerRootView style={{ flex: 1 }}>
+      <SafeAreaProvider>
+        <AppProvider>
+          <TabsLayout />
+        </AppProvider>
+      </SafeAreaProvider>
+    </GestureHandlerRootView>
   );
 }

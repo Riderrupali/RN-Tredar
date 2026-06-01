@@ -1,375 +1,249 @@
 import { Feather } from "@expo/vector-icons";
-import * as Haptics from "expo-haptics";
 import * as ImagePicker from "expo-image-picker";
-import React, { useState } from "react";
+import React from "react";
 import {
   Alert,
-  FlatList,
   Image,
-  Modal,
   Platform,
   ScrollView,
   StyleSheet,
+  Switch,
   Text,
-  TextInput,
   TouchableOpacity,
   View,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useApp } from "@/context/AppContext";
 import { useColors } from "@/hooks/useColors";
-import type { KnowledgeTopic } from "@/context/AppContext";
 
-const ICON_MAP: Record<string, string> = {
-  "trending-up": "trending-up",
-  activity: "activity",
-  "bar-chart-2": "bar-chart-2",
-  layers: "layers",
-  "git-commit": "git-commit",
-  percent: "percent",
-  cpu: "cpu",
-};
-
-export default function KnowledgeScreen() {
+export default function SettingsScreen() {
   const colors = useColors();
   const insets = useSafeAreaInsets();
-  const { knowledgeTopics, addKnowledgeEntry, deleteKnowledgeEntry } = useApp();
+  const { customThemeBg, setCustomThemeBg, alwaysOnMicActive, setAlwaysOnMicActive, clearMessages } = useApp();
 
-  const [search, setSearch] = useState("");
-  const [selectedTopic, setSelectedTopic] = useState<KnowledgeTopic | null>(null);
-  const [addVisible, setAddVisible] = useState(false);
-  const [newText, setNewText] = useState("");
-  const [newImage, setNewImage] = useState<string | null>(null);
-
-  const filtered = search
-    ? knowledgeTopics.filter(
-        (t) =>
-          t.name.toLowerCase().includes(search.toLowerCase()) ||
-          t.entries.some((e) => e.text.toLowerCase().includes(search.toLowerCase()))
-      )
-    : knowledgeTopics;
-
-  const handleAddEntry = () => {
-    if (!newText.trim() || !selectedTopic) return;
-    addKnowledgeEntry(selectedTopic.id, newText.trim(), newImage ?? undefined);
-    setNewText("");
-    setNewImage(null);
-    setAddVisible(false);
-    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-    const updated = knowledgeTopics.find((t) => t.id === selectedTopic.id);
-    if (updated) setSelectedTopic(updated);
-  };
-
-  const handlePickImage = async () => {
+  const handlePickTheme = async () => {
     const perm = await ImagePicker.requestMediaLibraryPermissionsAsync();
     if (!perm.granted) return;
     const result = await ImagePicker.launchImageLibraryAsync({
       mediaTypes: ["images"],
-      quality: 0.7,
+      quality: 0.9,
     });
-    if (!result.canceled) setNewImage(result.assets[0].uri);
+    if (!result.canceled) setCustomThemeBg(result.assets[0].uri);
   };
 
   return (
-    <View
-      style={[
-        styles.container,
-        {
-          backgroundColor: colors.background,
-          paddingTop: insets.top + (Platform.OS === "web" ? 67 : 0),
-        },
-      ]}
+    <ScrollView
+      style={[styles.container, { backgroundColor: colors.background }]}
+      contentContainerStyle={{
+        paddingTop: insets.top + (Platform.OS === "web" ? 67 : 0),
+        paddingBottom: insets.bottom + (Platform.OS === "web" ? 34 : 40),
+      }}
+      showsVerticalScrollIndicator={false}
     >
       <View style={styles.header}>
-        <View style={styles.headerLeft}>
-          <Feather name="book-open" size={22} color={colors.accent} />
-          <Text style={[styles.headerTitle, { color: colors.foreground }]}>Knowledge</Text>
-        </View>
+        <Text style={[styles.headerTitle, { color: colors.foreground }]}>Settings</Text>
       </View>
 
-      <View style={[styles.searchRow, { backgroundColor: colors.card, borderColor: colors.border }]}>
-        <Feather name="search" size={15} color={colors.mutedForeground} />
-        <TextInput
-          style={[styles.searchInput, { color: colors.foreground }]}
-          placeholder="Topic search kara..."
-          placeholderTextColor={colors.mutedForeground}
-          value={search}
-          onChangeText={setSearch}
-        />
-        {search.length > 0 && (
-          <TouchableOpacity onPress={() => setSearch("")}>
-            <Feather name="x" size={15} color={colors.mutedForeground} />
+      <View style={styles.section}>
+        <Text style={[styles.sectionTitle, { color: colors.mutedForeground }]}>THEME</Text>
+
+        <View style={[styles.themePreview, { borderColor: colors.border }]}>
+          {customThemeBg ? (
+            <Image source={{ uri: customThemeBg }} style={styles.themeImg} />
+          ) : (
+            <Image
+              source={require("@/assets/images/trading_bg.png")}
+              style={styles.themeImg}
+            />
+          )}
+          <View style={[styles.themeOverlay, { backgroundColor: "rgba(10,14,26,0.55)" }]}>
+            <Text style={styles.themeLabel}>
+              {customThemeBg ? "Custom Theme" : "Default Trading Theme"}
+            </Text>
+          </View>
+        </View>
+
+        <View style={styles.themeActions}>
+          <TouchableOpacity
+            style={[styles.themeBtn, { backgroundColor: colors.card, borderColor: colors.border }]}
+            onPress={handlePickTheme}
+          >
+            <Feather name="image" size={16} color={colors.primary} />
+            <Text style={[styles.themeBtnText, { color: colors.foreground }]}>
+              Gallery se photo add karo
+            </Text>
           </TouchableOpacity>
-        )}
-      </View>
 
-      <FlatList
-        data={filtered}
-        keyExtractor={(t) => t.id}
-        contentContainerStyle={{ padding: 16, gap: 10, paddingBottom: insets.bottom + 40 }}
-        showsVerticalScrollIndicator={false}
-        renderItem={({ item }) => (
-          <TopicCard
-            topic={item}
-            colors={colors}
-            onPress={() => setSelectedTopic(item)}
-          />
-        )}
-        ListEmptyComponent={
-          <View style={styles.empty}>
-            <Feather name="book-open" size={32} color={colors.border} />
-            <Text style={[styles.emptyText, { color: colors.mutedForeground }]}>
-              Kahi milale nahi
-            </Text>
-          </View>
-        }
-      />
-
-      <Modal visible={!!selectedTopic} animationType="slide" transparent>
-        <View style={styles.modalOverlay}>
-          <View style={[styles.detailSheet, { backgroundColor: colors.card }]}>
-            <View style={styles.detailHeader}>
-              <TouchableOpacity onPress={() => setSelectedTopic(null)}>
-                <Feather name="arrow-left" size={20} color={colors.foreground} />
-              </TouchableOpacity>
-              <Text style={[styles.detailTitle, { color: colors.foreground }]}>
-                {selectedTopic?.name}
-              </Text>
-              <TouchableOpacity
-                onPress={() => setAddVisible(true)}
-                style={[styles.addBtn, { backgroundColor: colors.primary }]}
-              >
-                <Feather name="plus" size={16} color={colors.primaryForeground} />
-              </TouchableOpacity>
-            </View>
-
-            <FlatList
-              data={selectedTopic?.entries ?? []}
-              keyExtractor={(e) => e.id}
-              contentContainerStyle={{ padding: 16, gap: 12 }}
-              showsVerticalScrollIndicator={false}
-              renderItem={({ item }) => (
-                <View style={[styles.entryCard, { backgroundColor: colors.background, borderColor: colors.border }]}>
-                  {item.imageUri && (
-                    <Image source={{ uri: item.imageUri }} style={styles.entryImage} />
-                  )}
-                  <Text style={[styles.entryText, { color: colors.foreground }]}>
-                    {item.text}
-                  </Text>
-                  <View style={styles.entryFooter}>
-                    <Text style={[styles.entryTime, { color: colors.mutedForeground }]}>
-                      {new Date(item.timestamp).toLocaleDateString()}
-                    </Text>
-                    <TouchableOpacity
-                      onPress={() => {
-                        Alert.alert("Delete?", "He entry delete karaychi ka?", [
-                          { text: "Cancel", style: "cancel" },
-                          {
-                            text: "Delete",
-                            style: "destructive",
-                            onPress: () => {
-                              if (selectedTopic) {
-                                deleteKnowledgeEntry(selectedTopic.id, item.id);
-                                setSelectedTopic((prev) =>
-                                  prev
-                                    ? { ...prev, entries: prev.entries.filter((e) => e.id !== item.id) }
-                                    : null
-                                );
-                              }
-                            },
-                          },
-                        ]);
-                      }}
-                    >
-                      <Feather name="trash-2" size={14} color={colors.destructive} />
-                    </TouchableOpacity>
-                  </View>
-                </View>
-              )}
-              ListEmptyComponent={
-                <View style={styles.empty}>
-                  <Text style={[styles.emptyText, { color: colors.mutedForeground }]}>
-                    Abhi kahi nahi — + press kara add karayla
-                  </Text>
-                </View>
-              }
-            />
-          </View>
-        </View>
-      </Modal>
-
-      <Modal visible={addVisible} transparent animationType="fade">
-        <View style={styles.modalOverlay}>
-          <View style={[styles.addSheet, { backgroundColor: colors.card }]}>
-            <Text style={[styles.addTitle, { color: colors.foreground }]}>
-              {selectedTopic?.name} — Navin Entry
-            </Text>
-            <TextInput
-              style={[styles.addInput, { backgroundColor: colors.input, borderColor: colors.border, color: colors.foreground }]}
-              placeholder="Information taka (rules, analysis, notes...)"
-              placeholderTextColor={colors.mutedForeground}
-              value={newText}
-              onChangeText={setNewText}
-              multiline
-              numberOfLines={4}
-              textAlignVertical="top"
-            />
+          {customThemeBg && (
             <TouchableOpacity
-              style={[styles.imagePickBtn, { borderColor: colors.border }]}
-              onPress={handlePickImage}
+              style={[styles.themeResetBtn, { borderColor: colors.border }]}
+              onPress={() => setCustomThemeBg(null)}
             >
-              {newImage ? (
-                <Image source={{ uri: newImage }} style={styles.pickedImage} />
-              ) : (
-                <>
-                  <Feather name="image" size={16} color={colors.mutedForeground} />
-                  <Text style={{ color: colors.mutedForeground, fontSize: 13 }}>
-                    Image add kara (optional)
-                  </Text>
-                </>
-              )}
+              <Feather name="rotate-ccw" size={14} color={colors.mutedForeground} />
+              <Text style={[styles.themeResetText, { color: colors.mutedForeground }]}>
+                Default Reset
+              </Text>
             </TouchableOpacity>
-            <View style={styles.addActions}>
-              <TouchableOpacity
-                style={[styles.cancelBtn, { borderColor: colors.border }]}
-                onPress={() => { setAddVisible(false); setNewText(""); setNewImage(null); }}
-              >
-                <Text style={{ color: colors.mutedForeground }}>Cancel</Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={[styles.saveBtn, { backgroundColor: colors.primary }]}
-                onPress={handleAddEntry}
-              >
-                <Text style={{ color: colors.primaryForeground, fontWeight: "700" as const }}>Save</Text>
-              </TouchableOpacity>
+          )}
+        </View>
+      </View>
+
+      <View style={styles.section}>
+        <Text style={[styles.sectionTitle, { color: colors.mutedForeground }]}>MIC SETTINGS</Text>
+
+        <View style={[styles.settingRow, { backgroundColor: colors.card, borderColor: colors.border }]}>
+          <View style={styles.settingLeft}>
+            <Feather name="mic" size={18} color={colors.primary} />
+            <View>
+              <Text style={[styles.settingLabel, { color: colors.foreground }]}>
+                Always-On Mic
+              </Text>
+              <Text style={[styles.settingDesc, { color: colors.mutedForeground }]}>
+                Sagla aayknar — Google mic sarakh
+              </Text>
             </View>
           </View>
+          <Switch
+            value={alwaysOnMicActive}
+            onValueChange={setAlwaysOnMicActive}
+            trackColor={{ false: colors.border, true: colors.primary }}
+            thumbColor="#FFFFFF"
+          />
         </View>
-      </Modal>
-    </View>
-  );
-}
+      </View>
 
-function TopicCard({ topic, colors, onPress }: { topic: KnowledgeTopic; colors: ReturnType<typeof useColors>; onPress: () => void }) {
-  return (
-    <TouchableOpacity
-      style={[styles.topicCard, { backgroundColor: colors.card, borderColor: colors.border }]}
-      onPress={onPress}
-      activeOpacity={0.8}
-    >
-      <View style={[styles.topicIcon, { backgroundColor: colors.secondary }]}>
-        <Feather
-          name={(ICON_MAP[topic.icon] as any) ?? "book-open"}
-          size={20}
-          color={colors.accent}
-        />
+      <View style={styles.section}>
+        <Text style={[styles.sectionTitle, { color: colors.mutedForeground }]}>COMMANDS</Text>
+        <View style={[styles.commandsCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
+          {[
+            { code: "123", desc: "Trading suru kar — Screen Monitor ughado" },
+            { code: "2", desc: "Information save kara (He lakshyat thev)" },
+            { code: "25 2", desc: "Buy kiti % / Sell kiti % — analysis" },
+            { code: "13 6", desc: "Quick Buy/Sell decision — 1 second madhe" },
+            { code: "3 2 1", desc: "Trading band kara, app madhe parat" },
+            { code: "000", desc: "Chat clear kara (reset)" },
+          ].map((c) => (
+            <View key={c.code} style={[styles.cmdItem, { borderBottomColor: colors.border }]}>
+              <View style={[styles.cmdCode, { backgroundColor: colors.secondary }]}>
+                <Text style={[styles.cmdCodeText, { color: colors.accent }]}>{c.code}</Text>
+              </View>
+              <Text style={[styles.cmdDesc, { color: colors.mutedForeground }]}>{c.desc}</Text>
+            </View>
+          ))}
+        </View>
       </View>
-      <View style={styles.topicInfo}>
-        <Text style={[styles.topicName, { color: colors.foreground }]}>{topic.name}</Text>
-        <Text style={[styles.topicCount, { color: colors.mutedForeground }]}>
-          {topic.entries.length} {topic.entries.length === 1 ? "entry" : "entries"}
+
+      <View style={styles.section}>
+        <Text style={[styles.sectionTitle, { color: colors.mutedForeground }]}>DATA</Text>
+        <TouchableOpacity
+          style={[styles.dangerBtn, { backgroundColor: colors.card, borderColor: colors.destructive + "40" }]}
+          onPress={() => {
+            Alert.alert("Chat Clear?", "Sagla chat history delete heil.", [
+              { text: "Cancel", style: "cancel" },
+              { text: "Clear", style: "destructive", onPress: clearMessages },
+            ]);
+          }}
+        >
+          <Feather name="trash-2" size={16} color={colors.destructive} />
+          <Text style={[styles.dangerText, { color: colors.destructive }]}>
+            Chat History Clear Kara
+          </Text>
+        </TouchableOpacity>
+      </View>
+
+      <View style={styles.aboutSection}>
+        <Text style={[styles.aboutApp, { color: colors.mutedForeground }]}>
+          Code Magic Trading App
         </Text>
+        <Text style={[styles.aboutVersion, { color: colors.border }]}>v1.0.0</Text>
       </View>
-      <Feather name="chevron-right" size={18} color={colors.mutedForeground} />
-    </TouchableOpacity>
+    </ScrollView>
   );
 }
 
 const styles = StyleSheet.create({
   container: { flex: 1 },
-  header: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    paddingHorizontal: 20,
-    paddingVertical: 16,
-  },
-  headerLeft: { flexDirection: "row", alignItems: "center", gap: 10 },
+  header: { paddingHorizontal: 20, paddingVertical: 16 },
   headerTitle: { fontSize: 22, fontWeight: "700" as const },
-  searchRow: {
+  section: { paddingHorizontal: 16, marginBottom: 24 },
+  sectionTitle: {
+    fontSize: 11,
+    fontWeight: "700" as const,
+    letterSpacing: 1.2,
+    marginBottom: 10,
+    marginLeft: 4,
+  },
+  themePreview: {
+    borderRadius: 16,
+    overflow: "hidden",
+    height: 160,
+    borderWidth: 1,
+    marginBottom: 12,
+  },
+  themeImg: { width: "100%", height: "100%", resizeMode: "cover" },
+  themeOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    justifyContent: "flex-end",
+    padding: 14,
+  },
+  themeLabel: {
+    color: "#FFFFFF",
+    fontWeight: "600" as const,
+    fontSize: 14,
+  },
+  themeActions: { gap: 8 },
+  themeBtn: {
     flexDirection: "row",
     alignItems: "center",
     gap: 10,
-    marginHorizontal: 16,
-    paddingHorizontal: 14,
-    paddingVertical: 10,
+    padding: 14,
     borderRadius: 12,
     borderWidth: 1,
-    marginBottom: 4,
   },
-  searchInput: { flex: 1, fontSize: 14 },
-  topicCard: {
+  themeBtnText: { fontSize: 14, fontWeight: "500" as const },
+  themeResetBtn: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 14,
+    gap: 8,
+    padding: 10,
+    borderRadius: 10,
+    borderWidth: 1,
+    justifyContent: "center",
+  },
+  themeResetText: { fontSize: 13 },
+  settingRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
     padding: 14,
     borderRadius: 14,
     borderWidth: 1,
   },
-  topicIcon: {
-    width: 44,
-    height: 44,
-    borderRadius: 12,
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  topicInfo: { flex: 1 },
-  topicName: { fontSize: 15, fontWeight: "600" as const },
-  topicCount: { fontSize: 12, marginTop: 2 },
-  empty: { alignItems: "center", justifyContent: "center", paddingTop: 40, gap: 8 },
-  emptyText: { fontSize: 14, textAlign: "center" },
-  modalOverlay: { flex: 1, backgroundColor: "rgba(0,0,0,0.7)" },
-  detailSheet: { flex: 1, marginTop: 60, borderTopLeftRadius: 24, borderTopRightRadius: 24 },
-  detailHeader: {
+  settingLeft: { flexDirection: "row", alignItems: "center", gap: 12 },
+  settingLabel: { fontSize: 14, fontWeight: "600" as const },
+  settingDesc: { fontSize: 12, marginTop: 1 },
+  commandsCard: { borderRadius: 14, borderWidth: 1, overflow: "hidden" },
+  cmdItem: {
     flexDirection: "row",
     alignItems: "center",
     gap: 12,
-    padding: 20,
+    padding: 12,
+    borderBottomWidth: 1,
   },
-  detailTitle: { flex: 1, fontSize: 18, fontWeight: "700" as const },
-  addBtn: {
-    width: 34,
-    height: 34,
-    borderRadius: 10,
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  entryCard: {
-    padding: 14,
-    borderRadius: 14,
-    borderWidth: 1,
-    gap: 8,
-  },
-  entryImage: { width: "100%", height: 140, borderRadius: 10 },
-  entryText: { fontSize: 14, lineHeight: 22 },
-  entryFooter: { flexDirection: "row", justifyContent: "space-between", alignItems: "center" },
-  entryTime: { fontSize: 11 },
-  addSheet: { margin: 20, marginTop: 100, borderRadius: 20, padding: 20, gap: 12 },
-  addTitle: { fontSize: 16, fontWeight: "700" as const },
-  addInput: { borderRadius: 12, borderWidth: 1, padding: 12, fontSize: 14, minHeight: 100 },
-  imagePickBtn: {
+  cmdCode: { paddingHorizontal: 10, paddingVertical: 4, borderRadius: 8 },
+  cmdCodeText: { fontSize: 13, fontWeight: "700" as const },
+  cmdDesc: { fontSize: 13, flex: 1 },
+  dangerBtn: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 8,
-    borderWidth: 1,
-    borderStyle: "dashed",
-    borderRadius: 12,
-    padding: 12,
-    justifyContent: "center",
-  },
-  pickedImage: { width: "100%", height: 120, borderRadius: 10 },
-  addActions: { flexDirection: "row", gap: 10 },
-  cancelBtn: {
-    flex: 1,
-    padding: 12,
+    gap: 10,
+    padding: 14,
     borderRadius: 12,
     borderWidth: 1,
-    alignItems: "center",
   },
-  saveBtn: {
-    flex: 1,
-    padding: 12,
-    borderRadius: 12,
-    alignItems: "center",
-  },
+  dangerText: { fontSize: 14, fontWeight: "500" as const },
+  aboutSection: { alignItems: "center", paddingBottom: 20, gap: 4 },
+  aboutApp: { fontSize: 13 },
+  aboutVersion: { fontSize: 11 },
 });
+            

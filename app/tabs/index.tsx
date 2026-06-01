@@ -1,13 +1,11 @@
-import { Feather, MaterialCommunityIcons } from "@expo/vector-icons";
+import { Feather } from "@expo/vector-icons";
 import * as Haptics from "expo-haptics";
-import { router } from "expo-router";
 import React, { useState } from "react";
 import {
   Alert,
   FlatList,
   Modal,
   Platform,
-  ScrollView,
   StyleSheet,
   Text,
   TextInput,
@@ -33,7 +31,6 @@ export default function ScreenMonitorScreen() {
     setScreenShareActive,
     isLoadingTrading,
     setIsLoadingTrading,
-    setActiveTabIndex,
   } = useApp();
 
   const [selectorVisible, setSelectorVisible] = useState(false);
@@ -56,10 +53,6 @@ export default function ScreenMonitorScreen() {
     setTradingActive(true);
     setScreenShareActive(true);
     Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-  };
-
-  const handleCommand123 = () => {
-    setSelectorVisible(true);
   };
 
   if (isLoadingTrading) {
@@ -228,22 +221,12 @@ export default function ScreenMonitorScreen() {
             />
 
             <TouchableOpacity
-              style={[
-                styles.startBtn,
-                {
-                  backgroundColor: selectedApp ? colors.primary : colors.muted,
-                },
-              ]}
+              style={[styles.startBtn, { backgroundColor: selectedApp ? colors.primary : colors.muted }]}
               onPress={handleStartTrading}
               activeOpacity={0.85}
             >
               <Feather name="play" size={18} color={selectedApp ? colors.primaryForeground : colors.mutedForeground} />
-              <Text
-                style={[
-                  styles.startBtnText,
-                  { color: selectedApp ? colors.primaryForeground : colors.mutedForeground },
-                ]}
-              >
+              <Text style={[styles.startBtnText, { color: selectedApp ? colors.primaryForeground : colors.mutedForeground }]}>
                 Start Trading
               </Text>
             </TouchableOpacity>
@@ -293,40 +276,14 @@ export default function ScreenMonitorScreen() {
 
 const styles = StyleSheet.create({
   container: { flex: 1 },
-  header: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    paddingHorizontal: 20,
-    paddingVertical: 16,
-  },
+  header: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", paddingHorizontal: 20, paddingVertical: 16 },
   headerTitle: { fontSize: 22, fontWeight: "700" as const },
-  activeBadge: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 5,
-    paddingHorizontal: 10,
-    paddingVertical: 4,
-    borderRadius: 20,
-  },
+  activeBadge: { flexDirection: "row", alignItems: "center", gap: 5, paddingHorizontal: 10, paddingVertical: 4, borderRadius: 20 },
   activeDot: { width: 6, height: 6, borderRadius: 3, backgroundColor: "#0A0E1A" },
   activeText: { fontSize: 11, fontWeight: "700" as const, color: "#0A0E1A" },
   body: { flex: 1, paddingHorizontal: 20, gap: 16 },
-  monitorCard: {
-    borderRadius: 20,
-    padding: 28,
-    alignItems: "center",
-    gap: 12,
-    borderWidth: 1.5,
-  },
-  iconCircle: {
-    width: 100,
-    height: 100,
-    borderRadius: 50,
-    justifyContent: "center",
-    alignItems: "center",
-    marginBottom: 4,
-  },
+  monitorCard: { borderRadius: 20, padding: 28, alignItems: "center", gap: 12, borderWidth: 1.5 },
+  iconCircle: { width: 100, height: 100, borderRadius: 50, justifyContent: "center", alignItems: "center", marginBottom: 4 },
   monitorTitle: { fontSize: 20, fontWeight: "700" as const },
   monitorSub: { fontSize: 13, textAlign: "center" },
   commandCard: { borderRadius: 16, padding: 16, borderWidth: 1 },
@@ -336,79 +293,20 @@ const styles = StyleSheet.create({
   cmdBadge: { paddingHorizontal: 10, paddingVertical: 4, borderRadius: 8, borderWidth: 1 },
   cmdCode: { fontSize: 13, fontWeight: "700" as const },
   cmdLabel: { fontSize: 13 },
-  modalOverlay: {
-    flex: 1,
-    backgroundColor: "rgba(0,0,0,0.7)",
-    justifyContent: "flex-end",
-  },
-  sheet: {
-    borderTopLeftRadius: 24,
-    borderTopRightRadius: 24,
-    padding: 20,
-    gap: 12,
-    paddingBottom: 36,
-  },
+  modalOverlay: { flex: 1, backgroundColor: "rgba(0,0,0,0.7)", justifyContent: "flex-end" },
+  sheet: { borderTopLeftRadius: 24, borderTopRightRadius: 24, padding: 20, gap: 12, paddingBottom: 36 },
   sheetHeader: { flexDirection: "row", justifyContent: "space-between", alignItems: "center" },
   sheetTitle: { fontSize: 17, fontWeight: "700" as const },
   sheetActions: { flexDirection: "row", gap: 8 },
-  sheetBtn: {
-    width: 34,
-    height: 34,
-    borderRadius: 10,
-    borderWidth: 1,
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  appRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 12,
-    padding: 12,
-    borderRadius: 12,
-    borderWidth: 1.5,
-  },
-  appIcon: {
-    width: 36,
-    height: 36,
-    borderRadius: 10,
-    justifyContent: "center",
-    alignItems: "center",
-  },
+  sheetBtn: { width: 34, height: 34, borderRadius: 10, borderWidth: 1, justifyContent: "center", alignItems: "center" },
+  appRow: { flexDirection: "row", alignItems: "center", gap: 12, padding: 12, borderRadius: 12, borderWidth: 1.5 },
+  appIcon: { width: 36, height: 36, borderRadius: 10, justifyContent: "center", alignItems: "center" },
   appName: { flex: 1, fontSize: 15, fontWeight: "500" as const },
-  startBtn: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    gap: 8,
-    paddingVertical: 14,
-    borderRadius: 14,
-    marginTop: 4,
-  },
+  startBtn: { flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 8, paddingVertical: 14, borderRadius: 14, marginTop: 4 },
   startBtnText: { fontSize: 16, fontWeight: "700" as const },
-  addSheet: {
-    margin: 24,
-    borderRadius: 20,
-    padding: 24,
-  },
-  input: {
-    borderRadius: 12,
-    borderWidth: 1,
-    padding: 14,
-    fontSize: 15,
-    marginBottom: 16,
-  },
+  addSheet: { margin: 24, borderRadius: 20, padding: 24 },
+  input: { borderRadius: 12, borderWidth: 1, padding: 14, fontSize: 15, marginBottom: 16 },
   addActions: { flexDirection: "row", gap: 12 },
-  addCancelBtn: {
-    flex: 1,
-    padding: 12,
-    borderRadius: 12,
-    borderWidth: 1,
-    alignItems: "center",
-  },
-  addConfirmBtn: {
-    flex: 1,
-    padding: 12,
-    borderRadius: 12,
-    alignItems: "center",
-  },
+  addCancelBtn: { flex: 1, padding: 12, borderRadius: 12, borderWidth: 1, alignItems: "center" },
+  addConfirmBtn: { flex: 1, padding: 12, borderRadius: 12, alignItems: "center" },
 });

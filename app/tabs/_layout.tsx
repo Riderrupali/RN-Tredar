@@ -1,14 +1,8 @@
-import React, { useEffect } from "react";
+import React from "react";
 import { BlurView } from "expo-blur";
 import { Tabs } from "expo-router";
-import * as SplashScreen from "expo-splash-screen";
 import { Feather, MaterialCommunityIcons } from "@expo/vector-icons";
 import { Platform, StyleSheet, View } from "react-native";
-import { SafeAreaProvider } from "react-native-safe-area-context";
-import { GestureHandlerRootView } from "react-native-gesture-handler";
-import { AppProvider } from "@/context/AppContext";
-
-SplashScreen.preventAutoHideAsync();
 
 let SymbolView: any = null;
 try {
@@ -22,18 +16,9 @@ const colors = {
   border: "#1E2A3A",
 };
 
-function TabsLayout() {
+export default function TabLayout() {
   const isIOS = Platform.OS === "ios";
   const isWeb = Platform.OS === "web";
-
-  useEffect(() => {
-    const hide = async () => {
-      try {
-        await SplashScreen.hideAsync();
-      } catch {}
-    };
-    hide();
-  }, []);
 
   return (
     <Tabs
@@ -118,15 +103,3 @@ function TabsLayout() {
     </Tabs>
   );
 }
-
-export default function RootLayout() {
-  return (
-    <GestureHandlerRootView style={{ flex: 1 }}>
-      <SafeAreaProvider>
-        <AppProvider>
-          <TabsLayout />
-        </AppProvider>
-      </SafeAreaProvider>
-    </GestureHandlerRootView>
-  );
-          }

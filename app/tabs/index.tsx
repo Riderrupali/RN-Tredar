@@ -39,9 +39,7 @@ export default function TredarBiginScreen() {
     (async () => {
       try {
         const stored = await AsyncStorage.getItem("tredar_stats");
-        if (stored) {
-          setStats(JSON.parse(stored));
-        }
+        if (stored) setStats(JSON.parse(stored));
       } catch (e) {
         console.log("Stats load error", e);
       }
@@ -95,12 +93,7 @@ export default function TredarBiginScreen() {
         "Chart मध्ये clear direction दिसत नाही. Sideways / unclear zone असू शकते. अशा वेळी थांबणं किंवा छोट्या position विचारात घ्या.";
     }
 
-    const newResult: AnalysisResult = {
-      action,
-      confidence,
-      explanation,
-    };
-    setResult(newResult);
+    setResult({ action, confidence, explanation });
   };
 
   const markFeedback = async (isRight: boolean) => {
@@ -137,6 +130,7 @@ export default function TredarBiginScreen() {
       <ScrollView
         contentContainerStyle={{ paddingHorizontal: 20, paddingBottom: 20 }}
       >
+        {/* Option 1: Gallery मधून Chart निवडा */}
         <TouchableOpacity
           style={[styles.pickButton, { backgroundColor: colors.primary }]}
           onPress={pickImage}
@@ -208,15 +202,10 @@ export default function TredarBiginScreen() {
             >
               {result.explanation}
             </Text>
-            <Text
-              style={[styles.disclaimer, { color: colors.mutedForeground }]}
-            >
-              हे फक्त demo educational अंदाज आहे. हा कोणताही guaranteed सल्ला
-              नाही. Real trading नेहमी स्वतःच्या risk वर करा.
-            </Text>
           </View>
         )}
 
+        {/* Option 2: Answer Right / Wrong */}
         {result && (
           <View style={styles.feedbackRow}>
             <TouchableOpacity
@@ -290,7 +279,6 @@ const styles = StyleSheet.create({
   resultTitle: { fontSize: 16, fontWeight: "700" as const, marginBottom: 8 },
   resultLine: { fontSize: 14, marginBottom: 4 },
   resultExplain: { fontSize: 13, marginTop: 6 },
-  disclaimer: { fontSize: 11, marginTop: 8 },
   feedbackRow: {
     flexDirection: "row",
     gap: 10,

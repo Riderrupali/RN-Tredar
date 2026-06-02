@@ -1,5 +1,13 @@
 import React, { useEffect, useState } from "react";
-import { StyleSheet, Text, View, TouchableOpacity, Image, Alert, ScrollView } from "react-native";
+import {
+  Alert,
+  Image,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
+} from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import * as ImagePicker from "expo-image-picker";
 import AsyncStorage from "@react-native-async-storage/async-storage";
@@ -69,8 +77,6 @@ export default function TredarBiginScreen() {
     analyzeImage();
   };
 
-  // आत्तासाठी image वर calculation न करता demo logic.
-  // नंतर तू trading rules दिल्यास इथे खऱ्या rules लावू.
   const analyzeImage = () => {
     const actions: AnalysisResult["action"][] = ["BUY", "SELL", "WAIT"];
     const idx = Math.floor(Math.random() * actions.length);
@@ -120,13 +126,17 @@ export default function TredarBiginScreen() {
       ]}
     >
       <View style={styles.header}>
-        <Text style={[styles.title, { color: colors.foreground }]}>Tredar Bigin</Text>
+        <Text style={[styles.title, { color: colors.foreground }]}>
+          Tredar Bigin
+        </Text>
         <Text style={[styles.subtitle, { color: colors.mutedForeground }]}>
           Chart screenshot → BUY / SELL / WAIT suggestion
         </Text>
       </View>
 
-      <ScrollView contentContainerStyle={{ paddingHorizontal: 20, paddingBottom: 20 }}>
+      <ScrollView
+        contentContainerStyle={{ paddingHorizontal: 20, paddingBottom: 20 }}
+      >
         <TouchableOpacity
           style={[styles.pickButton, { backgroundColor: colors.primary }]}
           onPress={pickImage}
@@ -189,14 +199,20 @@ export default function TredarBiginScreen() {
             </Text>
             <Text style={[styles.resultLine, { color: colors.foreground }]}>
               Confidence:{" "}
-              <Text style={{ fontWeight: "600" }}>{result.confidence}%</Text>
+              <Text style={{ fontWeight: "600" }}>
+                {result.confidence}%
+              </Text>
             </Text>
-            <Text style={[styles.resultExplain, { color: colors.mutedForeground }]}>
+            <Text
+              style={[styles.resultExplain, { color: colors.mutedForeground }]}
+            >
               {result.explanation}
             </Text>
-            <Text style={[styles.disclaimer, { color: colors.mutedForeground }]}>
-              हे फक्त demo educational अंदाज आहे. हा कोणताही guaranteed सल्ला नाही.
-              Real trading नेहमी स्वतःच्या risk वर करा.
+            <Text
+              style={[styles.disclaimer, { color: colors.mutedForeground }]}
+            >
+              हे फक्त demo educational अंदाज आहे. हा कोणताही guaranteed सल्ला
+              नाही. Real trading नेहमी स्वतःच्या risk वर करा.
             </Text>
           </View>
         )}
@@ -229,7 +245,9 @@ export default function TredarBiginScreen() {
           <Text style={[styles.statsTitle, { color: colors.foreground }]}>
             History
           </Text>
-          <Text style={[styles.statsText, { color: colors.mutedForeground }]}>
+          <Text
+            style={[styles.statsText, { color: colors.mutedForeground }]}
+          >
             Total: {stats.total} | Right: {stats.right} | Wrong: {stats.wrong}
           </Text>
         </View>

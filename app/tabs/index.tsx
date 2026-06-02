@@ -1,68 +1,112 @@
-import { Feather } from "@expo/vector-icons";
-import * as Haptics from "expo-haptics";
-import React, { useState } from "react";
-import {
-  Alert,
-  FlatList,
-  Modal,
-  Platform,
-  StyleSheet,
-  Text,
-  TextInput,
-  TouchableOpacity,
-  View,
-} from "react-native";
+import React, { useEffect, useState } from "react";
+import { StyleSheet, Text, View, TouchableOpacity, Image, Alert, ScrollView } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import CandleLoader from "@/components/CandleLoader";
-import { useApp } from "@/context/AppContext";
+import * as ImagePicker from "expo-image-picker";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import * as Haptics from "expo-haptics";
+import { Feather } from "@expo/vector-icons";
 import { useColors } from "@/hooks/useColors";
 
-export default function ScreenMonitorScreen() {
+type AnalysisResult = {
+  action: "BUY" | "SELL" | "WAIT";
+  confidence: number;
+  explanation: string;
+};
+
+type Stats = {
+  total: number;
+  right: number;
+  wrong: number;
+};
+
+export default function TredarBiginScreen() {
   const colors = useColors();
   const insets = useSafeAreaInsets();
-  const {
-    installedApps,
-    addApp,
-    removeApp,
-    selectedApp,
-    setSelectedApp,
-    tradingActive,
-    setTradingActive,
-    setScreenShareActive,
-    isLoadingTrading,
-    setIsLoadingTrading,
-  } = useApp();
 
-  const [selectorVisible, setSelectorVisible] = useState(false);
-  const [editMode, setEditMode] = useState(false);
-  const [addVisible, setAddVisible] = useState(false);
-  const [newAppName, setNewAppName] = useState("");
+  const [imageUri, setImageUri] = useState<string | null>(null);
+  const [result, setResult] = useState<AnalysisResult | null>(null);
+  const [stats, setStats] = useState<Stats>({ total: 0, right: 0, wrong: 0 });
 
-  const handleStartTrading = () => {
-    if (!selectedApp) {
-      Alert.alert("App Select Kara", "Konti trading app use karaychi te select kara.");
+  useEffect(() => {
+    (async () => {
+      try {
+        const stored = await AsyncStorage.getItem("tredar_stats");
+        if (stored) {
+          setStats(JSON.parse(stored));
+        }
+      } catch (e) {
+        console.log("Stats load error", e);
+      }
+    })();
+  }, []);
+
+  const saveStats = async (s: Stats) => {
+    try {
+      setStats(s);
+      await AsyncStorage.setItem("tredar_stats", JSON.stringify(s));
+    } catch (e) {
+      console.log("Stats save error", e);
+    }
+  };
+
+  const pickImage = async () => {
+    const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    if (!permission.granted) {
+      Alert.alert("Permission", "Gallery access permission लागेल.");
       return;
     }
-    setSelectorVisible(false);
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
-    setIsLoadingTrading(true);
+
+    const res = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      quality: 1,
+    });
+
+    if (res.canceled) return;
+
+    const uri = res.assets[0].uri;
+    setImageUri(uri);
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    analyzeImage();
   };
 
-  const handleLoadingComplete = () => {
-    setIsLoadingTrading(false);
-    setTradingActive(true);
-    setScreenShareActive(true);
-    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+  // आत्तासाठी image वर calculation न करता demo logic.
+  // नंतर तू trading rules दिल्यास इथे खऱ्या rules लावू.
+  const analyzeImage = () => {
+    const actions: AnalysisResult["action"][] = ["BUY", "SELL", "WAIT"];
+    const idx = Math.floor(Math.random() * actions.length);
+    const action = actions[idx];
+    const confidence = Math.floor(60 + Math.random() * 20); // 60–79 %
+
+    let explanation = "";
+    if (action === "BUY") {
+      explanation =
+        "Trend अंदाजे वरच्या बाजूला दिसत आहे. Buyers side strong असू शकतो. हा फक्त probability आहे, खात्री नाही. Real trading स्वतःच्या risk वर करा.";
+    } else if (action === "SELL") {
+      explanation =
+        "Trend अंदाजे खालीच्या बाजूला दिसत आहे. Sellers side active असू शकतो. हा फक्त अंदाज आहे. नेहमी stop loss वापरा.";
+    } else {
+      explanation =
+        "Chart मध्ये clear direction दिसत नाही. Sideways / unclear zone असू शकते. अशा वेळी थांबणं किंवा छोट्या position विचारात घ्या.";
+    }
+
+    const newResult: AnalysisResult = {
+      action,
+      confidence,
+      explanation,
+    };
+    setResult(newResult);
   };
 
-  if (isLoadingTrading) {
-    return (
-      <CandleLoader
-        appName={selectedApp?.name ?? "Trading App"}
-        onComplete={handleLoadingComplete}
-      />
-    );
-  }
+  const markFeedback = async (isRight: boolean) => {
+    if (!result) return;
+    Haptics.selectionAsync();
+    const newStats: Stats = {
+      total: stats.total + 1,
+      right: stats.right + (isRight ? 1 : 0),
+      wrong: stats.wrong + (!isRight ? 1 : 0),
+    };
+    await saveStats(newStats);
+  };
 
   return (
     <View
@@ -70,243 +114,190 @@ export default function ScreenMonitorScreen() {
         styles.container,
         {
           backgroundColor: colors.background,
-          paddingTop: insets.top + (Platform.OS === "web" ? 67 : 0),
-          paddingBottom: insets.bottom + (Platform.OS === "web" ? 34 : 0),
+          paddingTop: insets.top + 12,
+          paddingBottom: insets.bottom + 12,
         },
       ]}
     >
       <View style={styles.header}>
-        <Text style={[styles.headerTitle, { color: colors.foreground }]}>
-          Screen Monitoring
+        <Text style={[styles.title, { color: colors.foreground }]}>Tredar Bigin</Text>
+        <Text style={[styles.subtitle, { color: colors.mutedForeground }]}>
+          Chart screenshot → BUY / SELL / WAIT suggestion
         </Text>
-        {tradingActive && (
-          <View style={[styles.activeBadge, { backgroundColor: colors.primary }]}>
-            <View style={styles.activeDot} />
-            <Text style={styles.activeText}>LIVE</Text>
-          </View>
-        )}
       </View>
 
-      <View style={styles.body}>
+      <ScrollView contentContainerStyle={{ paddingHorizontal: 20, paddingBottom: 20 }}>
         <TouchableOpacity
-          style={[styles.monitorCard, { backgroundColor: colors.card, borderColor: tradingActive ? colors.primary : colors.border }]}
-          onPress={() => {
-            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-            setSelectorVisible(true);
-          }}
-          activeOpacity={0.8}
+          style={[styles.pickButton, { backgroundColor: colors.primary }]}
+          onPress={pickImage}
+          activeOpacity={0.9}
         >
-          <View style={[styles.iconCircle, { backgroundColor: tradingActive ? colors.primary + "20" : colors.secondary }]}>
-            <Feather
-              name="smartphone"
-              size={52}
-              color={tradingActive ? colors.primary : colors.mutedForeground}
-            />
-          </View>
-          <Text style={[styles.monitorTitle, { color: colors.foreground }]}>
-            {tradingActive ? "Trading Active" : "Screen Monitoring"}
-          </Text>
-          <Text style={[styles.monitorSub, { color: colors.mutedForeground }]}>
-            {tradingActive
-              ? `Monitoring: ${selectedApp?.name}`
-              : "Tap to select app & start trading"}
+          <Feather name="image" size={18} color={colors.primaryForeground} />
+          <Text
+            style={[
+              styles.pickButtonText,
+              { color: colors.primaryForeground },
+            ]}
+          >
+            Gallery मधून Chart निवडा
           </Text>
         </TouchableOpacity>
 
-        <View style={[styles.commandCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
-          <Text style={[styles.commandTitle, { color: colors.foreground }]}>
-            Quick Commands
-          </Text>
-          <View style={styles.commandList}>
-            {[
-              { cmd: "123", label: "Trading Suru Kar", color: colors.primary },
-              { cmd: "13 6", label: "Buy / Sell Decision", color: colors.accent },
-              { cmd: "25 2", label: "Buy/Sell Percent", color: "#A78BFA" },
-              { cmd: "3 2 1", label: "Trading Band Kar", color: colors.destructive },
-            ].map((item) => (
-              <View key={item.cmd} style={styles.cmdRow}>
-                <View style={[styles.cmdBadge, { backgroundColor: item.color + "20", borderColor: item.color }]}>
-                  <Text style={[styles.cmdCode, { color: item.color }]}>{item.cmd}</Text>
-                </View>
-                <Text style={[styles.cmdLabel, { color: colors.mutedForeground }]}>{item.label}</Text>
-              </View>
-            ))}
-          </View>
-        </View>
-      </View>
-
-      <Modal visible={selectorVisible} transparent animationType="slide">
-        <View style={styles.modalOverlay}>
-          <View style={[styles.sheet, { backgroundColor: colors.card }]}>
-            <View style={styles.sheetHeader}>
-              <Text style={[styles.sheetTitle, { color: colors.foreground }]}>
-                Trading App Select Kara
-              </Text>
-              <View style={styles.sheetActions}>
-                <TouchableOpacity
-                  onPress={() => setEditMode(!editMode)}
-                  style={[styles.sheetBtn, { borderColor: colors.border }]}
-                >
-                  <Feather
-                    name={editMode ? "check" : "edit-2"}
-                    size={16}
-                    color={editMode ? colors.primary : colors.mutedForeground}
-                  />
-                </TouchableOpacity>
-                <TouchableOpacity
-                  onPress={() => setAddVisible(true)}
-                  style={[styles.sheetBtn, { borderColor: colors.border }]}
-                >
-                  <Feather name="plus" size={16} color={colors.primary} />
-                </TouchableOpacity>
-                <TouchableOpacity
-                  onPress={() => setSelectorVisible(false)}
-                  style={[styles.sheetBtn, { borderColor: colors.border }]}
-                >
-                  <Feather name="x" size={16} color={colors.mutedForeground} />
-                </TouchableOpacity>
-              </View>
-            </View>
-
-            <FlatList
-              data={installedApps}
-              keyExtractor={(a) => a.id}
-              style={{ maxHeight: 280 }}
-              contentContainerStyle={{ gap: 8, paddingVertical: 8 }}
-              renderItem={({ item }) => (
-                <TouchableOpacity
-                  style={[
-                    styles.appRow,
-                    {
-                      backgroundColor:
-                        selectedApp?.id === item.id
-                          ? colors.primary + "15"
-                          : colors.secondary,
-                      borderColor:
-                        selectedApp?.id === item.id
-                          ? colors.primary
-                          : "transparent",
-                    },
-                  ]}
-                  onPress={() => {
-                    setSelectedApp(item);
-                    Haptics.selectionAsync();
-                  }}
-                >
-                  <View style={[styles.appIcon, { backgroundColor: colors.muted }]}>
-                    <Feather
-                      name={(item.icon as any) || "trending-up"}
-                      size={18}
-                      color={colors.primary}
-                    />
-                  </View>
-                  <Text style={[styles.appName, { color: colors.foreground }]}>
-                    {item.name}
-                  </Text>
-                  {selectedApp?.id === item.id && (
-                    <Feather name="check-circle" size={18} color={colors.primary} />
-                  )}
-                  {editMode && (
-                    <TouchableOpacity
-                      onPress={() => {
-                        removeApp(item.id);
-                        if (selectedApp?.id === item.id) setSelectedApp(null);
-                      }}
-                    >
-                      <Feather name="trash-2" size={16} color={colors.destructive} />
-                    </TouchableOpacity>
-                  )}
-                </TouchableOpacity>
-              )}
+        {imageUri && (
+          <View style={styles.imageBox}>
+            <Image
+              source={{ uri: imageUri }}
+              style={styles.image}
+              resizeMode="contain"
             />
-
-            <TouchableOpacity
-              style={[styles.startBtn, { backgroundColor: selectedApp ? colors.primary : colors.muted }]}
-              onPress={handleStartTrading}
-              activeOpacity={0.85}
-            >
-              <Feather name="play" size={18} color={selectedApp ? colors.primaryForeground : colors.mutedForeground} />
-              <Text style={[styles.startBtnText, { color: selectedApp ? colors.primaryForeground : colors.mutedForeground }]}>
-                Start Trading
-              </Text>
-            </TouchableOpacity>
           </View>
-        </View>
-      </Modal>
+        )}
 
-      <Modal visible={addVisible} transparent animationType="fade">
-        <View style={styles.modalOverlay}>
-          <View style={[styles.addSheet, { backgroundColor: colors.card }]}>
-            <Text style={[styles.sheetTitle, { color: colors.foreground, marginBottom: 16 }]}>
-              App Name Taka
+        {result && (
+          <View
+            style={[
+              styles.resultBox,
+              {
+                backgroundColor: colors.card,
+                borderColor:
+                  result.action === "BUY"
+                    ? "#22c55e"
+                    : result.action === "SELL"
+                    ? "#ef4444"
+                    : colors.border,
+              },
+            ]}
+          >
+            <Text style={[styles.resultTitle, { color: colors.foreground }]}>
+              Analysis Result
             </Text>
-            <TextInput
-              style={[styles.input, { backgroundColor: colors.input, borderColor: colors.border, color: colors.foreground }]}
-              placeholder="E.g. Zerodha Kite"
-              placeholderTextColor={colors.mutedForeground}
-              value={newAppName}
-              onChangeText={setNewAppName}
-            />
-            <View style={styles.addActions}>
-              <TouchableOpacity
-                style={[styles.addCancelBtn, { borderColor: colors.border }]}
-                onPress={() => { setAddVisible(false); setNewAppName(""); }}
-              >
-                <Text style={{ color: colors.mutedForeground }}>Cancel</Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={[styles.addConfirmBtn, { backgroundColor: colors.primary }]}
-                onPress={() => {
-                  if (newAppName.trim()) {
-                    addApp(newAppName.trim());
-                    setNewAppName("");
-                    setAddVisible(false);
-                  }
+            <Text style={[styles.resultLine, { color: colors.foreground }]}>
+              Action:{" "}
+              <Text
+                style={{
+                  fontWeight: "700",
+                  color:
+                    result.action === "BUY"
+                      ? "#22c55e"
+                      : result.action === "SELL"
+                      ? "#ef4444"
+                      : colors.foreground,
                 }}
               >
-                <Text style={{ color: colors.primaryForeground, fontWeight: "600" as const }}>Add</Text>
-              </TouchableOpacity>
-            </View>
+                {result.action}
+              </Text>
+            </Text>
+            <Text style={[styles.resultLine, { color: colors.foreground }]}>
+              Confidence:{" "}
+              <Text style={{ fontWeight: "600" }}>{result.confidence}%</Text>
+            </Text>
+            <Text style={[styles.resultExplain, { color: colors.mutedForeground }]}>
+              {result.explanation}
+            </Text>
+            <Text style={[styles.disclaimer, { color: colors.mutedForeground }]}>
+              हे फक्त demo educational अंदाज आहे. हा कोणताही guaranteed सल्ला नाही.
+              Real trading नेहमी स्वतःच्या risk वर करा.
+            </Text>
           </View>
+        )}
+
+        {result && (
+          <View style={styles.feedbackRow}>
+            <TouchableOpacity
+              style={[styles.feedbackBtn, { backgroundColor: "#22c55e" }]}
+              onPress={() => markFeedback(true)}
+            >
+              <Feather name="thumbs-up" size={16} color="#020617" />
+              <Text style={styles.feedbackText}>Answer Right</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={[styles.feedbackBtn, { backgroundColor: "#ef4444" }]}
+              onPress={() => markFeedback(false)}
+            >
+              <Feather name="thumbs-down" size={16} color="#020617" />
+              <Text style={styles.feedbackText}>Answer Wrong</Text>
+            </TouchableOpacity>
+          </View>
+        )}
+
+        <View
+          style={[
+            styles.statsBox,
+            { backgroundColor: colors.card, borderColor: colors.border },
+          ]}
+        >
+          <Text style={[styles.statsTitle, { color: colors.foreground }]}>
+            History
+          </Text>
+          <Text style={[styles.statsText, { color: colors.mutedForeground }]}>
+            Total: {stats.total} | Right: {stats.right} | Wrong: {stats.wrong}
+          </Text>
         </View>
-      </Modal>
+      </ScrollView>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
   container: { flex: 1 },
-  header: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", paddingHorizontal: 20, paddingVertical: 16 },
-  headerTitle: { fontSize: 22, fontWeight: "700" as const },
-  activeBadge: { flexDirection: "row", alignItems: "center", gap: 5, paddingHorizontal: 10, paddingVertical: 4, borderRadius: 20 },
-  activeDot: { width: 6, height: 6, borderRadius: 3, backgroundColor: "#0A0E1A" },
-  activeText: { fontSize: 11, fontWeight: "700" as const, color: "#0A0E1A" },
-  body: { flex: 1, paddingHorizontal: 20, gap: 16 },
-  monitorCard: { borderRadius: 20, padding: 28, alignItems: "center", gap: 12, borderWidth: 1.5 },
-  iconCircle: { width: 100, height: 100, borderRadius: 50, justifyContent: "center", alignItems: "center", marginBottom: 4 },
-  monitorTitle: { fontSize: 20, fontWeight: "700" as const },
-  monitorSub: { fontSize: 13, textAlign: "center" },
-  commandCard: { borderRadius: 16, padding: 16, borderWidth: 1 },
-  commandTitle: { fontSize: 14, fontWeight: "700" as const, marginBottom: 12 },
-  commandList: { gap: 10 },
-  cmdRow: { flexDirection: "row", alignItems: "center", gap: 10 },
-  cmdBadge: { paddingHorizontal: 10, paddingVertical: 4, borderRadius: 8, borderWidth: 1 },
-  cmdCode: { fontSize: 13, fontWeight: "700" as const },
-  cmdLabel: { fontSize: 13 },
-  modalOverlay: { flex: 1, backgroundColor: "rgba(0,0,0,0.7)", justifyContent: "flex-end" },
-  sheet: { borderTopLeftRadius: 24, borderTopRightRadius: 24, padding: 20, gap: 12, paddingBottom: 36 },
-  sheetHeader: { flexDirection: "row", justifyContent: "space-between", alignItems: "center" },
-  sheetTitle: { fontSize: 17, fontWeight: "700" as const },
-  sheetActions: { flexDirection: "row", gap: 8 },
-  sheetBtn: { width: 34, height: 34, borderRadius: 10, borderWidth: 1, justifyContent: "center", alignItems: "center" },
-  appRow: { flexDirection: "row", alignItems: "center", gap: 12, padding: 12, borderRadius: 12, borderWidth: 1.5 },
-  appIcon: { width: 36, height: 36, borderRadius: 10, justifyContent: "center", alignItems: "center" },
-  appName: { flex: 1, fontSize: 15, fontWeight: "500" as const },
-  startBtn: { flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 8, paddingVertical: 14, borderRadius: 14, marginTop: 4 },
-  startBtnText: { fontSize: 16, fontWeight: "700" as const },
-  addSheet: { margin: 24, borderRadius: 20, padding: 24 },
-  input: { borderRadius: 12, borderWidth: 1, padding: 14, fontSize: 15, marginBottom: 16 },
-  addActions: { flexDirection: "row", gap: 12 },
-  addCancelBtn: { flex: 1, padding: 12, borderRadius: 12, borderWidth: 1, alignItems: "center" },
-  addConfirmBtn: { flex: 1, padding: 12, borderRadius: 12, alignItems: "center" },
+  header: { paddingHorizontal: 20, marginBottom: 12 },
+  title: { fontSize: 24, fontWeight: "700" as const },
+  subtitle: { fontSize: 13, marginTop: 4 },
+  pickButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 8,
+    paddingVertical: 12,
+    borderRadius: 999,
+    marginTop: 8,
+    marginBottom: 12,
+  },
+  pickButtonText: { fontSize: 15, fontWeight: "600" as const },
+  imageBox: {
+    width: "100%",
+    height: 230,
+    borderRadius: 16,
+    overflow: "hidden",
+    marginTop: 4,
+    marginBottom: 12,
+  },
+  image: { width: "100%", height: "100%" },
+  resultBox: {
+    borderRadius: 16,
+    padding: 14,
+    borderWidth: 1.5,
+    marginTop: 4,
+  },
+  resultTitle: { fontSize: 16, fontWeight: "700" as const, marginBottom: 8 },
+  resultLine: { fontSize: 14, marginBottom: 4 },
+  resultExplain: { fontSize: 13, marginTop: 6 },
+  disclaimer: { fontSize: 11, marginTop: 8 },
+  feedbackRow: {
+    flexDirection: "row",
+    gap: 10,
+    marginTop: 14,
+  },
+  feedbackBtn: {
+    flex: 1,
+    paddingVertical: 10,
+    borderRadius: 999,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 6,
+  },
+  feedbackText: {
+    color: "#020617",
+    fontWeight: "600" as const,
+    fontSize: 13,
+  },
+  statsBox: {
+    marginTop: 16,
+    padding: 12,
+    borderRadius: 14,
+    borderWidth: 1,
+  },
+  statsTitle: { fontSize: 15, fontWeight: "700" as const, marginBottom: 4 },
+  statsText: { fontSize: 13 },
 });

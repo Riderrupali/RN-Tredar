@@ -9,8 +9,6 @@
     "scheme": "RN_Treder",
     "userInterfaceStyle": "dark",
     "newArchEnabled": true,
-      "backgroundColor": "#0A0E1A"
-    },
     "ios": {
       "supportsTablet": false,
       "bundleIdentifier": "com.codemagic.trading"

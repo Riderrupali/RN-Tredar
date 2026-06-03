@@ -9,9 +9,6 @@
     "scheme": "RN_Treder",
     "userInterfaceStyle": "dark",
     "newArchEnabled": true,
-    "splash": {
-      "image": "./assets/images/splash.png",
-      "resizeMode": "cover",
       "backgroundColor": "#0A0E1A"
     },
     "ios": {
